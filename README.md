@@ -160,7 +160,7 @@ Runs when Jump is pressed in the air on the client, and once per Move intent on 
 The origin is the `HumanoidRootPart` position. Three rays of length `WALL_REACH` are cast: forward (look vector), right and left. Each hit is rejected if:
 
 - `math.abs(normal.Y) > WALL_MAX_NORMAL_Y` (floor, ceiling or slope).
-- The part is not `Anchored` or has the attribute `NoWall`. An exploiter owns and can place unanchored parts near themselves.
+- The part is not `Anchored` or has the tag `NoWall`. An exploiter owns and can place unanchored parts near themselves.
 - It fails the span check: the ray is repeated at the `WALL_SPAN_OFFSETS` heights (head and feet), and the centre plus at least one other must hit the same part. This keeps a ledge corner from counting as a wall.
 
 **Classification** uses the character's facing against the wall, flattened to the horizontal plane. `L` is the look vector and `N` the wall normal, so `facing = -L:Dot(N)`, where 1 means looking straight at the wall.
@@ -202,9 +202,9 @@ Two vaults, two states.
 
 ### Marking
 
-A part is vaultable only if it, or the model it sits in, has the attribute `Vaultable = true`. Geometry alone is never enough.
+A part is vaultable only if it, or the model it sits in, has the tag `Vaultable`. Geometry alone is never enough.
 
-In a large RPG, "any anchored part in a height range" would vault over trim, props, fences, NPC colliders and half the map by accident, and every level change could silently add or remove vaults. A flag on the part makes a vault a level design decision. The server check is a cheap attribute read, and an exploiter cannot make anything vaultable. The cost is that level builders tag each obstacle, one attribute per part. The height check still runs on top, so a tagged part that is too tall or too short is ignored.
+In a large RPG, "any anchored part in a height range" would vault over trim, props, fences, NPC colliders and half the map by accident, and every level change could silently add or remove vaults. A flag on the part makes a vault a level design decision. The server check is a cheap tag check, and an exploiter cannot make anything vaultable. The cost is that level builders tag each obstacle, one tag per part. The height check still runs on top, so a tagged part that is too tall or too short is ignored.
 
 ### VaultLow probe
 

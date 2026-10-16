@@ -14,11 +14,11 @@ local function isWallFace(hit: RaycastResult): boolean
 end
 
 local function isVaultable(part: BasePart): boolean
-	if part:GetAttribute("Vaultable") == true then
+	if part:HasTag("Vaultable") then
 		return true
 	end
 	local model = part:FindFirstAncestorOfClass("Model")
-	return model ~= nil and model:GetAttribute("Vaultable") == true
+	return model ~= nil and model:HasTag("Vaultable")
 end
 
 -- a ray that starts inside a part never hits it, so a top above fromY is rejected for free
@@ -41,7 +41,7 @@ function Probes.wall(root: BasePart, speed: number, reach: number?): Types.WallH
 	for _, dir in { cf.LookVector, cf.RightVector, -cf.RightVector } do
 		local ray = dir * (reach or Config.WALL_REACH)
 		local hit = workspace:Raycast(cf.Position, ray, params)
-		if not hit or not isWallFace(hit) or hit.Instance:GetAttribute("NoWall") then
+		if not hit or not isWallFace(hit) or hit.Instance:HasTag("NoWall") then
 			continue
 		end
 
