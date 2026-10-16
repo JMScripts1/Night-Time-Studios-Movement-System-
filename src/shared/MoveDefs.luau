@@ -131,6 +131,11 @@ for state: Types.MoveState, row in rows do
 	table.freeze(def)
 end
 
+-- carried speed never goes past MOMENTUM_MAX, so anything that needs more could never happen
+for _, name in { "RUN_SPEED", "SLIDE_MIN_SPEED", "WALLRUN_MIN_SPEED" } do
+	assert(Config[name] <= Config.MOMENTUM_MAX, `{name} is above MOMENTUM_MAX`)
+end
+
 for state, def in MoveDefs do
 	for target: Types.MoveState in def.to do
 		assert(MoveDefs[target], `{state} goes to {target}, which has no row`)

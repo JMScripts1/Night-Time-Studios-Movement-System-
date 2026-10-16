@@ -261,8 +261,9 @@ local function sample(char: Model, st: CharState, now: number)
 		end
 	end
 
+	-- the client bleeds speed off at the ground decay, so the cap follows it down instead of dropping at once
 	local state: Types.MoveState = StateService.current(char)
-	speed.windowCap = MoveDefs[state].cap
+	speed.windowCap = math.max(MoveDefs[state].cap, speed.windowCap - Config.MOMENTUM_GROUND_DECAY * dt)
 	if now < st.dash.dashUntil then
 		speed.windowCap = math.max(speed.windowCap, Config.DASH_SPEED)
 	end
