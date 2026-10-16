@@ -76,6 +76,10 @@ function Probes.ground(root: BasePart, reach: number?): RaycastResult?
 	return workspace:Raycast(root.Position, Vector3.new(0, -(reach or Config.GROUND_RAY), 0), params)
 end
 
+function Probes.ceiling(root: BasePart): RaycastResult?
+	return workspace:Raycast(root.Position, Vector3.new(0, Config.STAND_RAY, 0), params)
+end
+
 -- the client also checks it's moving toward the hit, the server skips that
 function Probes.vaultLow(root: BasePart, reach: number?): Types.VaultHit?
 	local cf = root.CFrame

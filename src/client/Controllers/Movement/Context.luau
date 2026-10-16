@@ -1,0 +1,160 @@
+--!strict
+-- Movement & Combat System by Ruha.luau (github.com/JMScripts1)
+-- MIT licensed, see LICENSE. Feel free to remove this header.
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local Config = require(ReplicatedStorage.Shared.Config)
+local Trove = require(ReplicatedStorage.Packages.Trove)
+local Types = require(ReplicatedStorage.Shared.Types)
+
+-- the old solver can't match Trove's generic methods against the exported Trove type
+type Trove = typeof(Trove.new())
+
+local MOVER_FORCE = 1e5
+-- slower than this there is no direction of travel worth keeping
+local MIN_TRAVEL = 1
+
+local UNUSED_STATES = {
+	Enum.HumanoidStateType.Climbing,
+	Enum.HumanoidStateType.FallingDown,
+	Enum.HumanoidStateType.Ragdoll,
+	Enum.HumanoidStateType.GettingUp,
+}
+
+export type DashRun = {
+	dir: Types.DashDir,
+	startedAt: number,
+	isAir: boolean,
+}
+
+export type VaultRun = {
+	trove: Trove,
+	mover: AlignPosition,
+	start: Vector3,
+	bend: Vector3,
+	finish: Vector3,
+}
+
+export type Ctx = {
+	char: Model,
+	hum: Humanoid,
+	root: BasePart,
+	attach: Attachment,
+	lv: LinearVelocity,
+	align: AlignOrientation,
+	trove: Trove,
+
+	state: Types.MoveState,
+	since: number,
+	momentum: number,
+	heading: Vector3,
+	airJumps: number,
+	landedAt: number,
+	lastWallPart: BasePart?,
+	cooldownUntil: { [Types.MoveState]: number },
+	dashCooldownUntil: number,
+
+	wall: Types.WallHit?,
+	vault: Types.VaultHit?,
+	vaulting: VaultRun?,
+	dash: DashRun?,
+}
+
+local Context = {}
+
+function Context.new(char: Model): Ctx
+	local hum = char:WaitForChild("Humanoid") :: Humanoid
+	local root = char:WaitForChild("HumanoidRootPart") :: BasePart
+	local trove = Trove.new()
+
+	hum.UseJumpPower = true
+	hum.JumpPower = Config.JUMP_POWER
+	for _, state in UNUSED_STATES do
+		hum:SetStateEnabled(state, false)
+	end
+
+	local attach = Instance.new("Attachment")
+	attach.Parent = root
+	trove:Add(attach)
+
+	local lv = Instance.new("LinearVelocity")
+	lv.Attachment0 = attach
+	lv.RelativeTo = Enum.ActuatorRelativeTo.World
+	lv.MaxForce = MOVER_FORCE
+	lv.PrimaryTangentAxis = Vector3.xAxis
+	lv.SecondaryTangentAxis = Vector3.zAxis
+	lv.Enabled = false
+	lv.Parent = root
+	trove:Add(lv)
+
+	local align = Instance.new("AlignOrientation")
+	align.Mode = Enum.OrientationAlignmentMode.OneAttachment
+	align.Attachment0 = attach
+	align.RigidityEnabled = true
+	align.Enabled = false
+	align.Parent = root
+	trove:Add(align)
+
+	return {
+		char = char,
+		hum = hum,
+		root = root,
+		attach = attach,
+		lv = lv,
+		align = align,
+		trove = trove,
+
+		state = "Idle",
+		since = os.clock(),
+		momentum = Config.WALK_SPEED,
+		heading = Vector3.zero,
+		airJumps = 0,
+		landedAt = 0,
+		cooldownUntil = {},
+		dashCooldownUntil = 0,
+	}
+end
+
+function Context.isReady(c: Ctx, state: Types.MoveState): boolean
+	return os.clock() >= (c.cooldownUntil[state] or 0)
+end
+
+function Context.look(c: Ctx): Vector3
+	local look = c.root.CFrame.LookVector
+	return Vector3.new(look.X, 0, look.Z).Unit
+end
+
+function Context.travel(c: Ctx): Vector3
+	local v = c.root.AssemblyLinearVelocity
+	local flat = Vector3.new(v.X, 0, v.Z)
+	return if flat.Magnitude > MIN_TRAVEL then flat.Unit else Vector3.zero
+end
+
+-- drives X and Z only, gravity keeps Y
+function Context.glide(c: Ctx, velocity: Vector3)
+	local lv = c.lv
+	lv.VelocityConstraintMode = Enum.VelocityConstraintMode.Plane
+	lv.PlaneVelocity = Vector2.new(velocity.X, velocity.Z)
+	lv.Enabled = true
+end
+
+function Context.drive(c: Ctx, velocity: Vector3)
+	local lv = c.lv
+	lv.VelocityConstraintMode = Enum.VelocityConstraintMode.Vector
+	lv.VectorVelocity = velocity
+	lv.Enabled = true
+end
+
+function Context.face(c: Ctx, dir: Vector3)
+	c.align.CFrame = CFrame.lookAt(Vector3.zero, dir)
+	c.align.Enabled = true
+	c.hum.AutoRotate = false
+end
+
+function Context.release(c: Ctx)
+	c.lv.Enabled = false
+	c.align.Enabled = false
+	c.hum.AutoRotate = true
+end
+
+return Context

@@ -8,6 +8,9 @@ return table.freeze({
 	WALK_SPEED = 14,
 	CROUCH_SPEED = 7,
 	RUN_SPEED = 22,
+	RUN_BUILD = 2,
+	-- MoveDirection against the look vector, above this counts as running straight
+	RUN_STRAIGHT = 0.95,
 	MOMENTUM_MAX = 44,
 	MOMENTUM_GROUND_DECAY = 30,
 	MOMENTUM_AIR_DECAY = 1.5,
@@ -51,6 +54,9 @@ return table.freeze({
 	VAULT_LOW_TIME = 0.5,
 	VAULT_BOOST = 1.1,
 	VAULT_COOLDOWN = 0.4,
+	VAULT_TOWARD = 0.5,
+	VAULT_CLEAR = 0.5,
+	VAULT_LOW_OVER = 3,
 	LEDGE_REACH = 2.5,
 	LEDGE_MIN_UP = 1,
 	LEDGE_MAX_UP = 5,
@@ -85,6 +91,7 @@ return table.freeze({
 	HEAD_Y = 1.5,
 	KNEE_Y = -2,
 	GROUND_RAY = 4,
+	STAND_RAY = 2.5,
 
 	MOVE_BURST = 10,
 	MOVE_REFILL = 8,
