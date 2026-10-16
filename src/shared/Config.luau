@@ -97,6 +97,7 @@ return table.freeze({
 	-- server side give, so jitter and the server's slightly old view never deny a real player
 	COOLDOWN_TOLERANCE = 0.15,
 	LAND_SLACK = 3,
+	PROBE_SLACK = 3,
 
 	STAMINA_MAX = 100,
 	STAMINA_REGEN = 15,

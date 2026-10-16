@@ -35,11 +35,11 @@ local function hasHeadroom(root: BasePart, topY: number, length: number): boolea
 	return workspace:Raycast(origin, root.CFrame.LookVector * length, params) == nil
 end
 
-function Probes.wall(root: BasePart, speed: number): Types.WallHit?
+function Probes.wall(root: BasePart, speed: number, reach: number?): Types.WallHit?
 	local cf = root.CFrame
 
 	for _, dir in { cf.LookVector, cf.RightVector, -cf.RightVector } do
-		local ray = dir * Config.WALL_REACH
+		local ray = dir * (reach or Config.WALL_REACH)
 		local hit = workspace:Raycast(cf.Position, ray, params)
 		if not hit or not isWallFace(hit) or hit.Instance:GetAttribute("NoWall") then
 			continue
@@ -77,10 +77,10 @@ function Probes.ground(root: BasePart, reach: number?): RaycastResult?
 end
 
 -- the client also checks it's moving toward the hit, the server skips that
-function Probes.vaultLow(root: BasePart): Types.VaultHit?
+function Probes.vaultLow(root: BasePart, reach: number?): Types.VaultHit?
 	local cf = root.CFrame
-	local hit =
-		workspace:Raycast(cf.Position + Vector3.new(0, Config.KNEE_Y, 0), cf.LookVector * Config.VAULT_REACH, params)
+	local length = reach or Config.VAULT_REACH
+	local hit = workspace:Raycast(cf.Position + Vector3.new(0, Config.KNEE_Y, 0), cf.LookVector * length, params)
 	if not hit or not isWallFace(hit) or not isVaultable(hit.Instance) then
 		return nil
 	end
@@ -92,7 +92,7 @@ function Probes.vaultLow(root: BasePart): Types.VaultHit?
 		floorY + Config.VAULT_LOW_MAX_H,
 		Config.VAULT_LOW_MAX_H - Config.VAULT_LOW_MIN_H
 	)
-	if not topY or not hasHeadroom(root, topY, Config.VAULT_REACH) then
+	if not topY or not hasHeadroom(root, topY, length) then
 		return nil
 	end
 
