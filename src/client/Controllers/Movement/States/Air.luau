@@ -18,15 +18,6 @@ local TURN_RATE = math.rad(Config.AIR_TURN_RATE)
 
 local Air = {}
 
-local function turn(from: Vector3, to: Vector3, maxAngle: number): Vector3
-	local angle = math.acos(math.clamp(from:Dot(to), -1, 1))
-	if angle <= maxAngle then
-		return to
-	end
-	local sign = if from:Cross(to).Y < 0 then -1 else 1
-	return CFrame.Angles(0, sign * maxAngle, 0) * from
-end
-
 -- set directly, not left to the humanoid, so the next step can't read the takeoff as a landing
 function Air.launch(c: Ctx, power: number)
 	local v = c.root.AssemblyLinearVelocity
@@ -94,7 +85,7 @@ function Air.update(c: Ctx, dt: number): Types.MoveState?
 	local input = c.hum.MoveDirection
 	if input.Magnitude > 0 then
 		local want = input.Unit
-		c.heading = if c.heading == Vector3.zero then want else turn(c.heading, want, TURN_RATE * dt)
+		c.heading = if c.heading == Vector3.zero then want else Context.turn(c.heading, want, TURN_RATE * dt)
 	end
 	c.hum:Move(c.heading)
 	c.hum.WalkSpeed = math.max(c.momentum, Config.WALK_SPEED)

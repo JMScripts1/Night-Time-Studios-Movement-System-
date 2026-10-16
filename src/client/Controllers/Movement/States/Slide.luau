@@ -11,12 +11,15 @@ local Ground = require(script.Parent.Ground)
 
 type Ctx = Context.Ctx
 
+local TURN_RATE = math.rad(Config.SLIDE_TURN_RATE)
+
 local Slide = {}
 
 function Slide.enter(c: Ctx)
 	local travel = Context.travel(c)
 	c.heading = if travel == Vector3.zero then Context.look(c) else travel
 	c.momentum = math.min(Config.MOMENTUM_MAX, c.momentum * Config.SLIDE_BOOST)
+	Context.face(c, c.heading)
 	Context.glide(c, c.heading * c.momentum)
 end
 
@@ -31,6 +34,11 @@ function Slide.update(c: Ctx, dt: number): Types.MoveState?
 	if c.momentum < Config.SLIDE_END_SPEED then
 		return Ground.pick(c)
 	end
+
+	-- the default camera stops short of straight down, so the flat look is never zero
+	local look = workspace.CurrentCamera.CFrame.LookVector
+	c.heading = Context.turn(c.heading, Vector3.new(look.X, 0, look.Z).Unit, TURN_RATE * dt)
+	Context.face(c, c.heading)
 	Context.glide(c, c.heading * c.momentum)
 	return nil
 end

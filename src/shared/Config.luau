@@ -28,6 +28,8 @@ return table.freeze({
 	SLIDE_END_SPEED = 10,
 	SLIDE_COOLDOWN = 0.6,
 	SLIDE_JUMP_GAIN = 4,
+	-- degrees per second the slide turns toward the camera
+	SLIDE_TURN_RATE = 90,
 
 	WALL_REACH = 2.5,
 	WALL_SPAN_OFFSETS = table.freeze({ 1.5, -1.5 }),

@@ -139,6 +139,16 @@ function Context.travel(c: Ctx): Vector3
 	return if flat.Magnitude > MIN_TRAVEL then flat.Unit else Vector3.zero
 end
 
+-- both flat and unit, turns around Y by at most maxAngle radians
+function Context.turn(from: Vector3, to: Vector3, maxAngle: number): Vector3
+	local angle = math.acos(math.clamp(from:Dot(to), -1, 1))
+	if angle <= maxAngle then
+		return to
+	end
+	local sign = if from:Cross(to).Y < 0 then -1 else 1
+	return CFrame.Angles(0, sign * maxAngle, 0) * from
+end
+
 -- drives X and Z only, gravity keeps Y
 function Context.glide(c: Ctx, velocity: Vector3)
 	local lv = c.lv
