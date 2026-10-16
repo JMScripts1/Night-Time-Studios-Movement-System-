@@ -28,7 +28,7 @@ function Slide.update(c: Ctx, dt: number): Types.MoveState?
 	end
 
 	c.momentum -= Config.SLIDE_DECAY * dt
-	if c.momentum < Config.SLIDE_END_SPEED or not InputController.isDown("Crouch") then
+	if c.momentum < Config.SLIDE_END_SPEED then
 		return Ground.pick(c)
 	end
 	Context.glide(c, c.heading * c.momentum)
