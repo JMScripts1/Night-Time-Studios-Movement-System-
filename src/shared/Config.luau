@@ -46,6 +46,7 @@ return table.freeze({
 	LEAP_GAIN = 6,
 	BOOST_UP = 100,
 	BOOST_TIME = 0.6,
+	BOOST_IN = 10,
 
 	VAULT_REACH = 2.5,
 	VAULT_INSET = 0.5,

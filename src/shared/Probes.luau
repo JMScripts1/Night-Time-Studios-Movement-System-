@@ -76,6 +76,12 @@ function Probes.ground(root: BasePart, reach: number?): RaycastResult?
 	return workspace:Raycast(root.Position, Vector3.new(0, -(reach or Config.GROUND_RAY), 0), params)
 end
 
+-- nothing at knee height means the body has risen past the top of whatever is in front
+function Probes.isOverLip(root: BasePart, dir: Vector3): boolean
+	local knee = root.Position + Vector3.new(0, Config.KNEE_Y, 0)
+	return workspace:Raycast(knee, dir * Config.WALL_REACH, params) == nil
+end
+
 function Probes.ceiling(root: BasePart): RaycastResult?
 	return workspace:Raycast(root.Position, Vector3.new(0, Config.STAND_RAY, 0), params)
 end

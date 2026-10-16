@@ -67,6 +67,12 @@ function WallCling.update(c: Ctx): Types.MoveState?
 			return wall
 		end
 	end
+
+	-- only once over the top, pushing in any earlier pins us to the wall and friction kills the climb
+	local inward = -(c.wall :: Types.WallHit).normal
+	if Probes.isOverLip(c.root, inward) then
+		Context.glide(c, inward * Config.BOOST_IN)
+	end
 	return if elapsed >= Config.BOOST_TIME then "Fall" else nil
 end
 
