@@ -9,6 +9,7 @@ local Config = require(ReplicatedStorage.Shared.Config)
 local MoveDefs = require(ReplicatedStorage.Shared.MoveDefs)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local Types = require(ReplicatedStorage.Shared.Types)
+local AnimationController = require(script.Parent.AnimationController)
 local InputController = require(script.Parent.InputController)
 local Context = require(script.Parent.Movement.Context)
 local Dash = require(script.Parent.Movement.Dash)
@@ -107,6 +108,7 @@ local function switch(c: Ctx, to: Types.MoveState)
 	if enter then
 		enter(c)
 	end
+	AnimationController.play(c)
 	send(to)
 end
 
@@ -121,7 +123,10 @@ end
 
 local function step(c: Ctx, dt: number)
 	if InputController.take("Dash") then
-		Dash.start(c, InputController.dashDir())
+		local dir: Types.DashDir = InputController.dashDir()
+		if Dash.start(c, dir) then
+			AnimationController.dash(dir)
+		end
 	end
 	local run = c.dash
 	if run then
@@ -167,6 +172,8 @@ end
 
 local function onCharacterAdded(char: Model)
 	local c = Context.new(char)
+	AnimationController.load(c)
+	AnimationController.play(c)
 	ctx = c
 	-- the server starts every character in Walk
 	lastSent = "Walk"

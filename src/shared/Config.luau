@@ -72,6 +72,7 @@ return table.freeze({
 	LEAN_WALK = 9,
 	LEAN_SPRINT = 11,
 	LEAN_TIME = 0.08,
+	ANIM_FADE = 0.1,
 	HURT_THRESHOLD = 0.3,
 	HURT_SPEED_PENALTY = 4,
 	DODGE_TIME = 0.15,

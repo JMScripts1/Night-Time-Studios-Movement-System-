@@ -24,6 +24,18 @@ export type MoveGroup = "Grounded" | "Airborne" | "Wall"
 
 export type DashDir = "F" | "B" | "L" | "R"
 
+-- WallRun and WallLeap play one of their sides, R6 can't mirror at runtime
+export type AnimName =
+	MoveState
+	| "WallRunLeft"
+	| "WallRunRight"
+	| "WallLeapLeft"
+	| "WallLeapRight"
+	| "DashF"
+	| "DashB"
+	| "DashL"
+	| "DashR"
+
 export type MoveDef = {
 	group: MoveGroup,
 	wire: MoveState,

@@ -42,15 +42,16 @@ local function direction(c: Ctx, dir: Types.DashDir): Vector3
 	return if dir == "R" then right else -right
 end
 
-function Dash.start(c: Ctx, dir: Types.DashDir)
+function Dash.start(c: Ctx, dir: Types.DashDir): boolean
 	local now = os.clock()
 	if c.dash or now < c.dashCooldownUntil or not FROM[c.state] then
-		return
+		return false
 	end
 
 	c.dash = { dir = dir, startedAt = now, isAir = MoveDefs[c.state].group == "Airborne" }
 	c.dashCooldownUntil = now + Config.DASH_COOLDOWN
 	Remotes.Dash:FireServer(dir)
+	return true
 end
 
 function Dash.update(c: Ctx, run: Context.DashRun)
