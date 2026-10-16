@@ -23,9 +23,6 @@ local COYOTE_WINDOW = Config.COYOTE + Config.SPEED_SAMPLE_INTERVAL
 -- long enough to skip the sample after a snap, the client's old position can still arrive
 local SNAP_EXEMPT = Config.SPEED_SAMPLE_INTERVAL * 2
 local GROUND_REACH = Config.GROUND_RAY + Config.LAND_SLACK
--- the server's copy of the character trails the client by speed times ping
-local WALL_REACH = Config.WALL_REACH + Config.PROBE_SLACK
-local VAULT_REACH = Config.VAULT_REACH + Config.PROBE_SLACK
 -- facing and speed are the client's call, the server only needs a real wall
 local ANY_SPEED = math.huge
 
@@ -74,6 +71,11 @@ local function onGround(root: BasePart): boolean
 	return Probes.ground(root, GROUND_REACH) ~= nil
 end
 
+-- the server's copy of the character trails the client by speed times ping
+local function reach(st: CharState, base: number): number
+	return base + Config.PROBE_SLACK + st.speed.measured * Config.PROBE_LAG
+end
+
 local function blockRegrab(st: CharState, untilTime: number)
 	for _, state: Types.MoveState in ATTACHED do
 		st.move.cooldownUntil[state] = untilTime
@@ -109,13 +111,13 @@ local function canEnter(
 	elseif to == "DoubleJump" then
 		return move.airJumps < Config.MAX_AIR_JUMPS
 	elseif table.find(ATTACHED, to) then
-		local hit = Probes.wall(root, ANY_SPEED, WALL_REACH)
+		local hit = Probes.wall(root, ANY_SPEED, reach(st, Config.WALL_REACH))
 		if hit and hit.part ~= move.lastWallPart then
 			return true, hit.part
 		end
 		return false
 	elseif to == "VaultLow" then
-		return onGround(root) and Probes.vaultLow(root, VAULT_REACH) ~= nil
+		return onGround(root) and Probes.vaultLow(root, reach(st, Config.VAULT_REACH)) ~= nil
 	elseif to == "VaultMid" then
 		return Probes.vaultMid(root) ~= nil
 	end

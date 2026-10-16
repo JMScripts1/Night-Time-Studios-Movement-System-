@@ -30,9 +30,9 @@ local function findTop(part: BasePart, point: Vector3, fromY: number, depth: num
 	return nil
 end
 
-local function hasHeadroom(root: BasePart, topY: number, length: number): boolean
-	local origin = Vector3.new(root.Position.X, topY + Config.ROOT_HEIGHT, root.Position.Z)
-	return workspace:Raycast(origin, root.CFrame.LookVector * length, params) == nil
+local function hasHeadroom(from: Vector3, look: Vector3, topY: number, length: number): boolean
+	local origin = Vector3.new(from.X, topY + Config.ROOT_HEIGHT, from.Z)
+	return workspace:Raycast(origin, look * length, params) == nil
 end
 
 function Probes.wall(root: BasePart, speed: number, reach: number?): Types.WallHit?
@@ -96,7 +96,8 @@ function Probes.vaultLow(root: BasePart, reach: number?): Types.VaultHit?
 		floorY + Config.VAULT_LOW_MAX_H,
 		Config.VAULT_LOW_MAX_H - Config.VAULT_LOW_MIN_H
 	)
-	if not top or not hasHeadroom(root, top.Y, length) then
+	-- from the top, not the root, so it covers the vault path wherever the probe started
+	if not top or not hasHeadroom(top, cf.LookVector, top.Y, Config.VAULT_LOW_OVER) then
 		return nil
 	end
 
@@ -122,7 +123,7 @@ function Probes.vaultMid(root: BasePart): Types.VaultHit?
 		head.Y + Config.LEDGE_MAX_UP,
 		Config.LEDGE_MAX_UP - Config.LEDGE_MIN_UP
 	)
-	if not top or not hasHeadroom(root, top.Y, Config.LEDGE_REACH + Config.LEDGE_DEPTH) then
+	if not top or not hasHeadroom(cf.Position, cf.LookVector, top.Y, Config.LEDGE_REACH + Config.LEDGE_DEPTH) then
 		return nil
 	end
 
