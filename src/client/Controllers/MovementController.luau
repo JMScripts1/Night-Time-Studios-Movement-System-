@@ -102,6 +102,10 @@ local function switch(c: Ctx, to: Types.MoveState)
 		c.cooldownUntil[to] = now + def.cooldown
 	end
 
+	if Config.DEBUG then
+		print("state", from, "->", to)
+	end
+
 	c.state = to
 	c.since = now
 	local enter = STATES[to].enter
@@ -143,6 +147,9 @@ end
 
 local function onDeny(state: string)
 	local c = ctx
+	if Config.DEBUG then
+		print("denied", state)
+	end
 	if not c then
 		return
 	elseif state == "Dash" then
