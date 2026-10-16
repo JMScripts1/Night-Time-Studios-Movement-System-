@@ -72,8 +72,8 @@ function Probes.wall(root: BasePart, speed: number): Types.WallHit?
 	return nil
 end
 
-function Probes.ground(root: BasePart): RaycastResult?
-	return workspace:Raycast(root.Position, Vector3.new(0, -Config.GROUND_RAY, 0), params)
+function Probes.ground(root: BasePart, reach: number?): RaycastResult?
+	return workspace:Raycast(root.Position, Vector3.new(0, -(reach or Config.GROUND_RAY), 0), params)
 end
 
 -- the client also checks it's moving toward the hit, the server skips that

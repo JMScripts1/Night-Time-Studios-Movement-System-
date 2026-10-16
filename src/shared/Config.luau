@@ -3,7 +3,7 @@
 -- MIT licensed, see LICENSE. Feel free to remove this header.
 
 return table.freeze({
-	DEBUG = false,
+	DEBUG = true,
 
 	WALK_SPEED = 14,
 	CROUCH_SPEED = 7,
@@ -94,6 +94,9 @@ return table.freeze({
 	SPEED_BUCKET_MAX = 6,
 	SPEED_BUCKET_DRAIN = 1.5,
 	SPAWN_EXEMPT = 1.5,
+	-- server side give, so jitter and the server's slightly old view never deny a real player
+	COOLDOWN_TOLERANCE = 0.15,
+	LAND_SLACK = 3,
 
 	STAMINA_MAX = 100,
 	STAMINA_REGEN = 15,
