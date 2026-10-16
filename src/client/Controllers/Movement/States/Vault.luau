@@ -4,6 +4,7 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Config = require(ReplicatedStorage.Shared.Config)
+local Probes = require(ReplicatedStorage.Shared.Probes)
 local Types = require(ReplicatedStorage.Shared.Types)
 local Context = require(script.Parent.Parent.Context)
 local InputController = require(script.Parent.Parent.Parent.InputController)
@@ -15,6 +16,18 @@ local STAND = Vector3.new(0, Config.ROOT_HEIGHT, 0)
 local LIFT = Vector3.new(0, Config.ROOT_HEIGHT + Config.VAULT_CLEAR, 0)
 
 local Vault = {}
+
+function Vault.findLedge(c: Ctx): boolean
+	if not Context.isReady(c, "VaultMid") then
+		return false
+	end
+	local hit = Probes.vaultMid(c.root)
+	if not hit then
+		return false
+	end
+	c.vault = hit
+	return true
+end
 
 function Vault.enter(c: Ctx)
 	local hit = c.vault :: Types.VaultHit

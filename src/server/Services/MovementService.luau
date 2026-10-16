@@ -28,6 +28,9 @@ local ANY_SPEED = math.huge
 
 local ATTACHED: { Types.MoveState } = { "WallRun", "WallCling" }
 
+local CLINGS: { [Types.MoveState]: true } = { WallCling = true, WallBoost = true }
+local LEDGE_WINDOW = Config.LEDGE_GRACE + Config.COOLDOWN_TOLERANCE
+
 local DASH_FROM: { [Types.MoveState]: true } = {
 	Idle = true,
 	Walk = true,
@@ -119,6 +122,9 @@ local function canEnter(
 	elseif to == "VaultLow" then
 		return onGround(root) and Probes.vaultLow(root, reach(st, Config.VAULT_REACH)) ~= nil
 	elseif to == "VaultMid" then
+		if from == "Fall" and not (CLINGS[move.prev] and now - move.since <= LEDGE_WINDOW) then
+			return false
+		end
 		-- a boost is fast vertically, which the measured speed doesn't see, so this only gets the flat slack
 		return Probes.vaultMid(root, Config.PROBE_SLACK) ~= nil
 	end
@@ -154,6 +160,7 @@ local function apply(
 		move.cooldownUntil[to] = now + def.cooldown
 	end
 
+	move.prev = from
 	move.state = to
 	move.since = now
 	move.endsAt = if def.duration then now + def.duration else nil

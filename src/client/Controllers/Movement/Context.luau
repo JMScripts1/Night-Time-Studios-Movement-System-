@@ -46,6 +46,7 @@ export type Ctx = {
 	trove: Trove,
 
 	state: Types.MoveState,
+	prev: Types.MoveState,
 	since: number,
 	momentum: number,
 	heading: Vector3,
@@ -111,6 +112,7 @@ function Context.new(char: Model): Ctx
 		trove = trove,
 
 		state = "Idle",
+		prev = "Idle",
 		since = os.clock(),
 		momentum = Config.WALK_SPEED,
 		heading = Vector3.zero,

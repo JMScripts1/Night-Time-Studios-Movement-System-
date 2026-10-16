@@ -9,12 +9,15 @@ local Types = require(ReplicatedStorage.Shared.Types)
 local Context = require(script.Parent.Parent.Context)
 local InputController = require(script.Parent.Parent.Parent.InputController)
 local Ground = require(script.Parent.Ground)
+local Vault = require(script.Parent.Vault)
 
 type Ctx = Context.Ctx
 
 -- still going up faster than this means the ground under us is the one we just left
 local RISING = 1
 local TURN_RATE = math.rad(Config.AIR_TURN_RATE)
+
+local CLINGS: { [Types.MoveState]: true } = { WallCling = true, WallBoost = true }
 
 local Air = {}
 
@@ -67,6 +70,12 @@ function Air.update(c: Ctx, dt: number): Types.MoveState?
 	local landed: Types.MoveState? = Air.land(c)
 	if landed then
 		return landed
+	end
+
+	-- a late press just after letting go of a cling or boost still catches the ledge
+	local isLetGo = c.state == "Fall" and CLINGS[c.prev] and os.clock() - c.since < Config.LEDGE_GRACE
+	if isLetGo and InputController.take("VaultMid") and Vault.findLedge(c) then
+		return "VaultMid"
 	end
 
 	-- a wall in reach wins over the air jump

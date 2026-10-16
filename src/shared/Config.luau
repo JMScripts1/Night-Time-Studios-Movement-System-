@@ -65,6 +65,8 @@ return table.freeze({
 	LEDGE_LOW = -2.5,
 	LEDGE_HIGH = 6.5,
 	LEDGE_DEPTH = 1.5,
+	-- seconds after letting go of a cling or boost that VaultMid still works from Fall
+	LEDGE_GRACE = 0.3,
 	VAULT_MID_TIME = 0.8,
 	TOP_MIN_NORMAL_Y = 0.8,
 

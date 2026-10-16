@@ -10,6 +10,7 @@ local Types = require(ReplicatedStorage.Shared.Types)
 export type CharState = {
 	move: {
 		state: Types.MoveState,
+		prev: Types.MoveState,
 		since: number,
 		endsAt: number?,
 		airJumps: number,
@@ -53,7 +54,14 @@ function StateService.add(char: Model)
 	local now = workspace:GetServerTimeNow()
 	local pivot = char:GetPivot()
 	states[char] = {
-		move = { state = SPAWN_STATE, since = now, airJumps = 0, groundedAt = 0, cooldownUntil = {} },
+		move = {
+			state = SPAWN_STATE,
+			prev = SPAWN_STATE,
+			since = now,
+			airJumps = 0,
+			groundedAt = 0,
+			cooldownUntil = {},
+		},
 		dash = { dashUntil = 0, dodgeUntil = 0, dashCooldownUntil = 0 },
 		speed = {
 			windowCap = MoveDefs[SPAWN_STATE].cap,
@@ -103,6 +111,7 @@ function StateService.current(char: Model): Types.MoveState
 		if MoveDefs[after].group == "Grounded" and MoveDefs[move.state].group ~= "Grounded" then
 			StateService.land(char, endsAt)
 		end
+		move.prev = move.state
 		move.state = after
 		move.since = endsAt
 		move.endsAt = nil

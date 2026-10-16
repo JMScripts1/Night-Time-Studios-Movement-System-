@@ -43,7 +43,8 @@ local rows: { [Types.MoveState]: Row } = {
 	Jump = { group = "Airborne", to = { "DoubleJump", "Fall", "WallRun", "WallCling", "Land" } },
 	DoubleJump = { group = "Airborne", to = { "Fall", "WallRun", "WallCling", "Land" } },
 	SlideJump = { group = "Airborne", to = { "DoubleJump", "Fall", "WallRun", "WallCling", "Land" } },
-	Fall = { group = "Airborne", to = { "DoubleJump", "WallRun", "WallCling", "Land" } },
+	-- VaultMid only just after letting go of a cling or boost, MovementService checks the timing
+	Fall = { group = "Airborne", to = { "DoubleJump", "WallRun", "WallCling", "VaultMid", "Land" } },
 
 	WallRun = {
 		group = "Wall",

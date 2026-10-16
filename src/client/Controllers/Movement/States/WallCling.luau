@@ -9,24 +9,13 @@ local Types = require(ReplicatedStorage.Shared.Types)
 local Context = require(script.Parent.Parent.Context)
 local InputController = require(script.Parent.Parent.Parent.InputController)
 local Air = require(script.Parent.Air)
+local Vault = require(script.Parent.Vault)
 
 type Ctx = Context.Ctx
 
 local SLIDE_DOWN = Vector3.new(0, -Config.CLING_SLIDE_SPEED, 0)
 
 local WallCling = {}
-
-local function findLedge(c: Ctx): boolean
-	if not Context.isReady(c, "VaultMid") then
-		return false
-	end
-	local hit = Probes.vaultMid(c.root)
-	if not hit then
-		return false
-	end
-	c.vault = hit
-	return true
-end
 
 function WallCling.enter(c: Ctx)
 	local wall = c.wall :: Types.WallHit
@@ -47,7 +36,7 @@ function WallCling.update(c: Ctx): Types.MoveState?
 	local landed: Types.MoveState? = Air.land(c)
 	if landed then
 		return landed
-	elseif InputController.take("VaultMid") and findLedge(c) then
+	elseif InputController.take("VaultMid") and Vault.findLedge(c) then
 		return "VaultMid"
 	end
 	local elapsed = os.clock() - c.since

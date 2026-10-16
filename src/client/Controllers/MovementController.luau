@@ -106,6 +106,7 @@ local function switch(c: Ctx, to: Types.MoveState)
 		print("state", from, "->", to)
 	end
 
+	c.prev = from
 	c.state = to
 	c.since = now
 	local enter = STATES[to].enter
