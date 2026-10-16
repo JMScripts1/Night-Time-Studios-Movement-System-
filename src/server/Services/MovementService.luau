@@ -119,7 +119,8 @@ local function canEnter(
 	elseif to == "VaultLow" then
 		return onGround(root) and Probes.vaultLow(root, reach(st, Config.VAULT_REACH)) ~= nil
 	elseif to == "VaultMid" then
-		return Probes.vaultMid(root) ~= nil
+		-- a boost is fast vertically, which the measured speed doesn't see, so this only gets the flat slack
+		return Probes.vaultMid(root, Config.PROBE_SLACK) ~= nil
 	end
 	return true
 end

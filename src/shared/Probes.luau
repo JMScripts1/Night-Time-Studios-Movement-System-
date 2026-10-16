@@ -110,25 +110,19 @@ function Probes.vaultLow(root: BasePart, reach: number?): Types.VaultHit?
 	return { kind = "Low", part = hit.Instance, topY = top.Y, point = top, normal = hit.Normal }
 end
 
-function Probes.vaultMid(root: BasePart): Types.VaultHit?
+-- the wall ray goes along the bottom of the lip window, so any lip above it is found
+function Probes.vaultMid(root: BasePart, slack: number?): Types.VaultHit?
 	local cf = root.CFrame
-	local head = cf.Position + Vector3.new(0, Config.HEAD_Y, 0)
-	local reach = cf.LookVector * Config.LEDGE_REACH
+	local give = slack or 0
+	local low = cf.Position + Vector3.new(0, Config.LEDGE_LOW - give, 0)
 
-	local hit = workspace:Raycast(head, reach, params)
+	local hit = workspace:Raycast(low, cf.LookVector * (Config.LEDGE_REACH + give), params)
 	if not hit or not isWallFace(hit) or not isVaultable(hit.Instance) then
 		return nil
 	end
-	if workspace:Raycast(head + Vector3.new(0, Config.LEDGE_MAX_UP, 0), reach, params) then
-		return nil
-	end
 
-	local top = findTop(
-		hit.Instance,
-		hit.Position - hit.Normal * Config.LEDGE_DEPTH,
-		head.Y + Config.LEDGE_MAX_UP,
-		Config.LEDGE_MAX_UP - Config.LEDGE_MIN_UP
-	)
+	local fromY = cf.Position.Y + Config.LEDGE_HIGH + give
+	local top = findTop(hit.Instance, hit.Position - hit.Normal * Config.LEDGE_DEPTH, fromY, fromY - low.Y)
 	if not top or not hasHeadroom(cf.Position, cf.LookVector, top.Y, Config.LEDGE_REACH + Config.LEDGE_DEPTH) then
 		return nil
 	end

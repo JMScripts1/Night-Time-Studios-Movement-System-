@@ -61,8 +61,9 @@ return table.freeze({
 	VAULT_CLEAR = 0.5,
 	VAULT_LOW_OVER = 3,
 	LEDGE_REACH = 2.5,
-	LEDGE_MIN_UP = 1,
-	LEDGE_MAX_UP = 5,
+	-- VaultMid lip window from the root centre, just above the feet to 5 over the head
+	LEDGE_LOW = -2.5,
+	LEDGE_HIGH = 6.5,
 	LEDGE_DEPTH = 1.5,
 	VAULT_MID_TIME = 0.8,
 	TOP_MIN_NORMAL_Y = 0.8,
@@ -94,7 +95,6 @@ return table.freeze({
 
 	-- offsets from the HumanoidRootPart centre, same for every R6 character
 	ROOT_HEIGHT = 3,
-	HEAD_Y = 1.5,
 	KNEE_Y = -2,
 	GROUND_RAY = 4,
 	STAND_RAY = 2.5,
