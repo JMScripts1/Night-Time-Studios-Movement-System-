@@ -83,6 +83,9 @@ local function cap(wire: Types.MoveState): number
 		return Config.WALK_SPEED
 	elseif wire == "CrouchWalk" then
 		return Config.CROUCH_SPEED
+	elseif wire == "WallLeap" then
+		-- the leap's push goes past momentum, see WallRun on the client
+		return Config.MOMENTUM_MAX + Config.LEAP_GAIN + Config.LEAP_OUT
 	end
 	return Config.MOMENTUM_MAX
 end
