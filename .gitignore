@@ -1,0 +1,8 @@
+Packages/
+sourcemap.json
+*.rbxl
+*.rbxlx
+*.rbxl.lock
+*.rbxlx.lock
+
+Docs \[ Do not push anything inside \]/
