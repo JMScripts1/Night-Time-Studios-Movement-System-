@@ -196,7 +196,7 @@ Two vaults, two states.
 | Allowed from | Walk, Run. Not Slide, not mid air | WallCling, WallBoost |
 | Minimum speed | none | none |
 | Momentum | x `VAULT_BOOST`, capped at `MOMENTUM_MAX` | unchanged |
-| Ends in | Run if Shift is held, otherwise Walk | Walk, standing on the ledge |
+| Ends in | Run if sprint is held, otherwise Walk | Walk, standing on the ledge |
 | Animation | VaultLow | VaultMid (latch and pull up) |
 | Duration | `VAULT_LOW_TIME` | `VAULT_MID_TIME` |
 
@@ -330,7 +330,7 @@ One entry point, `init.client.luau`, requires and starts the controllers.
 
 | Module | Job |
 |---|---|
-| `InputController` | The only module that reads input. Turns keys from `Config.KEYS` into named actions (`Sprint`, `Crouch`, `Jump`, `Dash`, `VaultMid`) and hands them to the movement controller. Sprint is held, not toggled. Movement direction comes from `Humanoid.MoveDirection` for now. If Server Authority is ever adopted, this is the module that moves to the Input Action System |
+| `InputController` | The only module that reads input. Turns keys from `Config.KEYS` into named actions (`Sprint`, `Crouch`, `Jump`, `Dash`, `VaultMid`) and hands them to the movement controller. Sprint is a double tap of W, held for as long as W stays down. W is read without being sunk so it still walks, and Shift is left free for shift lock. Movement direction comes from `Humanoid.MoveDirection` for now. If Server Authority is ever adopted, this is the module that moves to the Input Action System |
 | `MovementController` | The state machine, momentum and movers. One update per step (`RunService.PreSimulation`) and one `request(to)` function. `request` checks `MoveDefs[current].to[to]` and the local cooldown, switches at once, and sends `Move` when the wire state changed. On `MoveDeny` it cancels |
 | `AnimationController` | Loads every R6 track once per character through the `Animator` the server made (`WaitForChild("Animator")`) and keeps them. Plays by state |
 | `EffectController` | Later. Dust, wall sparks and FOV scaling with momentum, driven by the `MoveState` attribute |
@@ -358,7 +358,7 @@ The table passed to states holds the character, humanoid, root, animator, probe 
 
 | Action | Key | Config |
 |---|---|---|
-| Sprint (hold) | Left Shift | `KEYS.SPRINT` |
+| Sprint | Double tap W, hold | `KEYS.SPRINT`, `DOUBLE_TAP` |
 | Crouch | Left Control | `KEYS.CROUCH` |
 | Jump | Space | `KEYS.JUMP` |
 | Dash | Q | `KEYS.DASH` |
@@ -516,7 +516,7 @@ return table.freeze({
 	DASH_REFILL = 1,
 
 	KEYS = {
-		SPRINT = Enum.KeyCode.LeftShift,
+		SPRINT = Enum.KeyCode.W,
 		CROUCH = Enum.KeyCode.LeftControl,
 		JUMP = Enum.KeyCode.Space,
 		DASH = Enum.KeyCode.Q,
@@ -584,7 +584,7 @@ Whether to build on Server Authority now that Roblox calls it released is a deci
 - Dash Forward with no key held, usable in the air
 - No stamina costs
 - Loose speed caps
-- Shift to sprint, Control to crouch, Q to dash
+- Double tap W to sprint (Shift stays shift lock), Control to crouch, Q to dash
 - Both vaults. VaultMid is one latch and pull up animation from WallCling and WallBoost with no boost, and may change later
 - Whether Slide can pass under low gaps is tested first, and a smaller collision hull is only added if needed (section 15)
 

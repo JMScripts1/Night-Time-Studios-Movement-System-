@@ -10,11 +10,12 @@ local Types = require(ReplicatedStorage.Shared.Types)
 
 export type Action = "Sprint" | "Crouch" | "Jump" | "Dash" | "VaultMid"
 
--- above the default controls and sunk, so Space never jumps the humanoid and Shift never toggles shift lock
+local SPRINT: Action = "Sprint"
+
+-- above the default controls and sunk, so Space never jumps the humanoid
 local PRIORITY = Enum.ContextActionPriority.High.Value
 
 local BINDS: { [Action]: Enum.KeyCode } = {
-	Sprint = Config.KEYS.SPRINT,
 	Crouch = Config.KEYS.CROUCH,
 	Jump = Config.KEYS.JUMP,
 	Dash = Config.KEYS.DASH,
@@ -33,6 +34,7 @@ local InputController = {}
 
 local held: { [Action]: boolean } = {}
 local pressed: { [Action]: boolean } = {}
+local lastTap = 0
 
 function InputController.isDown(action: Action): boolean
 	return held[action] == true
@@ -69,6 +71,24 @@ for action: Action, key in BINDS do
 		return Enum.ContextActionResult.Sink
 	end, false, PRIORITY, key)
 end
+
+-- the sprint key also walks, so it's watched without sinking it
+UserInputService.InputBegan:Connect(function(input: InputObject, isProcessed: boolean)
+	if isProcessed or input.KeyCode ~= Config.KEYS.SPRINT then
+		return
+	end
+	local now = os.clock()
+	if now - lastTap <= Config.DOUBLE_TAP then
+		held[SPRINT] = true
+	end
+	lastTap = now
+end)
+
+UserInputService.InputEnded:Connect(function(input: InputObject)
+	if input.KeyCode == Config.KEYS.SPRINT then
+		held[SPRINT] = nil
+	end
+end)
 
 -- a key let go while the window is unfocused never sends an End
 UserInputService.WindowFocusReleased:Connect(function()

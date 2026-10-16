@@ -81,12 +81,14 @@ return table.freeze({
 	DASH_REFILL = 1,
 
 	KEYS = table.freeze({
-		SPRINT = Enum.KeyCode.LeftShift,
+		SPRINT = Enum.KeyCode.W,
 		CROUCH = Enum.KeyCode.LeftControl,
 		JUMP = Enum.KeyCode.Space,
 		DASH = Enum.KeyCode.Q,
 		VAULT_MID = Enum.KeyCode.F,
 	}),
+	-- most seconds between the two taps of the sprint key
+	DOUBLE_TAP = 0.3,
 
 	-- offsets from the HumanoidRootPart centre, same for every R6 character
 	ROOT_HEIGHT = 3,
