@@ -55,11 +55,18 @@ return table.freeze({
 	VAULT_LOW_MIN_H = 2,
 	VAULT_LOW_MAX_H = 4.5,
 	VAULT_LOW_TIME = 0.5,
+	VAULT_LOW_MIN_TIME = 0.2,
 	VAULT_BOOST = 1.1,
 	VAULT_COOLDOWN = 0.4,
 	VAULT_TOWARD = 0.5,
 	VAULT_CLEAR = 0.5,
 	VAULT_LOW_OVER = 3,
+	-- keys of the 30 frame VaultLow animation, as a fraction of the vault
+	VAULT_LOW_PLANT_AT = 8 / 30,
+	VAULT_LOW_CLEAR_AT = 20 / 30,
+	-- where the root sits when the hands land, past the near edge and above the top
+	VAULT_PLANT_IN = 0.5,
+	VAULT_PLANT_UP = 2,
 	LEDGE_REACH = 2.5,
 	-- VaultMid lip window from the root centre, just above the feet to 5 over the head
 	LEDGE_LOW = -2.5,
@@ -67,7 +74,11 @@ return table.freeze({
 	LEDGE_DEPTH = 1.5,
 	-- seconds after letting go of a cling or boost that VaultMid still works from Fall
 	LEDGE_GRACE = 0.3,
-	VAULT_MID_TIME = 0.8,
+	-- the VaultMid animation's length, it plants its hands at the halfway point
+	VAULT_MID_TIME = 0.4,
+	-- where the root sits when the hands land, above the lip and out from the wall face
+	LEDGE_PLANT_UP = 0.5,
+	LEDGE_PLANT_OUT = 0.5,
 	TOP_MIN_NORMAL_Y = 0.8,
 
 	DASH_SPEED = 55,

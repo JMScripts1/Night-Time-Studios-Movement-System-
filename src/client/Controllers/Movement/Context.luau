@@ -30,9 +30,10 @@ export type DashRun = {
 export type VaultRun = {
 	trove: Trove,
 	mover: AlignPosition,
-	start: Vector3,
-	bend: Vector3,
-	finish: Vector3,
+	facing: Vector3,
+	time: number,
+	-- 0 to 1 through the vault, to where the root should be
+	at: (number) -> Vector3,
 }
 
 export type Ctx = {

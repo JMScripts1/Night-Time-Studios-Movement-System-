@@ -101,6 +101,12 @@ function AnimationController.play(c: Ctx)
 	else
 		start(c.state)
 	end
+
+	-- a vault's path is keyed to its animation, so the animation is stretched to the vault's length
+	local run = c.vaulting
+	if run and current and current.Length > 0 then
+		current:AdjustSpeed(current.Length / run.time)
+	end
 end
 
 function AnimationController.dash(dir: Types.DashDir)
