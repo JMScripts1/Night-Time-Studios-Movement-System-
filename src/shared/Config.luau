@@ -67,7 +67,6 @@ return table.freeze({
 	DASH_SPEED = 55,
 	DASH_TIME = 0.2,
 	DASH_TAIL = 0.15,
-	DASH_EXIT_SPEED = 40,
 	DASH_AIR_HOLD = 0.1,
 	LEAN_WALK = 9,
 	LEAN_SPRINT = 11,

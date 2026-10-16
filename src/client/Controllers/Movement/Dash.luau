@@ -25,8 +25,6 @@ local FROM: { [Types.MoveState]: true } = table.freeze({
 })
 
 local HOLD = Config.DASH_TIME * (1 - Config.DASH_TAIL)
--- the tail fades to the speed handed to momentum, so the dash never ends in a sudden drop
-local EXIT = math.min(Config.DASH_EXIT_SPEED, Config.MOMENTUM_MAX)
 
 local Dash = {}
 
@@ -63,8 +61,10 @@ function Dash.update(c: Ctx, run: Context.DashRun)
 		return
 	end
 
+	-- never slower than the momentum it started from, and the tail lands back on it, so a dash adds no speed
 	local fade = math.max(0, elapsed - HOLD) / (Config.DASH_TIME - HOLD)
-	local speed = Config.DASH_SPEED + (EXIT - Config.DASH_SPEED) * fade
+	local peak = math.max(Config.DASH_SPEED, c.momentum)
+	local speed = peak + (c.momentum - peak) * fade
 	Context.glide(c, direction(c, run.dir) * speed)
 
 	if run.isAir and elapsed < Config.DASH_AIR_HOLD then
@@ -74,12 +74,6 @@ function Dash.update(c: Ctx, run: Context.DashRun)
 end
 
 function Dash.finish(c: Ctx)
-	c.dash = nil
-	c.lv.Enabled = false
-	c.momentum = math.max(c.momentum, EXIT)
-end
-
-function Dash.cancel(c: Ctx)
 	c.dash = nil
 	c.lv.Enabled = false
 end

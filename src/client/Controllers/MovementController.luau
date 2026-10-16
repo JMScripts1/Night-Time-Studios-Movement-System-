@@ -154,7 +154,7 @@ local function onDeny(state: string)
 		return
 	elseif state == "Dash" then
 		if c.dash then
-			Dash.cancel(c)
+			Dash.finish(c)
 		end
 		return
 	end
