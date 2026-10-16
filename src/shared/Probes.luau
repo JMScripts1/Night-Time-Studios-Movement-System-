@@ -22,10 +22,10 @@ local function isVaultable(part: BasePart): boolean
 end
 
 -- a ray that starts inside a part never hits it, so a top above fromY is rejected for free
-local function findTop(part: BasePart, point: Vector3, fromY: number, depth: number): number?
+local function findTop(part: BasePart, point: Vector3, fromY: number, depth: number): Vector3?
 	local hit = workspace:Raycast(Vector3.new(point.X, fromY, point.Z), Vector3.new(0, -depth, 0), params)
 	if hit and hit.Instance == part and hit.Normal.Y >= Config.TOP_MIN_NORMAL_Y then
-		return hit.Position.Y
+		return hit.Position
 	end
 	return nil
 end
@@ -86,17 +86,17 @@ function Probes.vaultLow(root: BasePart, reach: number?): Types.VaultHit?
 	end
 
 	local floorY = cf.Position.Y - Config.ROOT_HEIGHT
-	local topY = findTop(
+	local top = findTop(
 		hit.Instance,
 		hit.Position - hit.Normal * Config.VAULT_INSET,
 		floorY + Config.VAULT_LOW_MAX_H,
 		Config.VAULT_LOW_MAX_H - Config.VAULT_LOW_MIN_H
 	)
-	if not topY or not hasHeadroom(root, topY, length) then
+	if not top or not hasHeadroom(root, top.Y, length) then
 		return nil
 	end
 
-	return { kind = "Low", part = hit.Instance, topY = topY, normal = hit.Normal }
+	return { kind = "Low", part = hit.Instance, topY = top.Y, point = top, normal = hit.Normal }
 end
 
 function Probes.vaultMid(root: BasePart): Types.VaultHit?
@@ -112,17 +112,17 @@ function Probes.vaultMid(root: BasePart): Types.VaultHit?
 		return nil
 	end
 
-	local topY = findTop(
+	local top = findTop(
 		hit.Instance,
 		hit.Position - hit.Normal * Config.LEDGE_DEPTH,
 		head.Y + Config.LEDGE_MAX_UP,
 		Config.LEDGE_MAX_UP - Config.LEDGE_MIN_UP
 	)
-	if not topY or not hasHeadroom(root, topY, Config.LEDGE_REACH + Config.LEDGE_DEPTH) then
+	if not top or not hasHeadroom(root, top.Y, Config.LEDGE_REACH + Config.LEDGE_DEPTH) then
 		return nil
 	end
 
-	return { kind = "Mid", part = hit.Instance, topY = topY, normal = hit.Normal }
+	return { kind = "Mid", part = hit.Instance, topY = top.Y, point = top, normal = hit.Normal }
 end
 
 return Probes

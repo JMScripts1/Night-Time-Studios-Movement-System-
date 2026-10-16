@@ -46,6 +46,7 @@ export type VaultHit = {
 	kind: "Low" | "Mid",
 	part: BasePart,
 	topY: number,
+	point: Vector3,
 	normal: Vector3,
 }
 
