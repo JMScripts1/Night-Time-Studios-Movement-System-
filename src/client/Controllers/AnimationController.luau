@@ -27,6 +27,7 @@ local AnimationController = {}
 local animations: { [Types.AnimName]: Animation } = {}
 local tracks: { [Types.AnimName]: AnimationTrack } = {}
 local current: AnimationTrack? = nil
+local dashing: AnimationTrack? = nil
 
 for name: Types.AnimName, id in Anims do
 	local anim = Instance.new("Animation")
@@ -34,6 +35,7 @@ for name: Types.AnimName, id in Anims do
 	animations[name] = anim
 end
 
+-- while a dash plays the state track is only remembered, it starts when the dash ends
 local function start(name: Types.AnimName)
 	local track = tracks[name]
 	if track == current then
@@ -43,7 +45,7 @@ local function start(name: Types.AnimName)
 		current:Stop(Config.ANIM_FADE)
 	end
 	current = track
-	if track then
+	if track and not dashing then
 		track:Play(Config.ANIM_FADE)
 	end
 end
@@ -52,6 +54,7 @@ function AnimationController.load(c: Ctx)
 	local animator = c.hum:WaitForChild("Animator") :: Animator
 	table.clear(tracks)
 	current = nil
+	dashing = nil
 
 	for name: Types.AnimName, anim in animations do
 		local track = animator:LoadAnimation(anim)
@@ -65,9 +68,26 @@ function AnimationController.load(c: Ctx)
 		end
 	end
 
+	for _, name: Types.AnimName in DASH do
+		local track = tracks[name]
+		if not track then
+			continue
+		end
+		c.trove:Connect(track.Stopped, function()
+			if dashing ~= track then
+				return
+			end
+			dashing = nil
+			if current then
+				current:Play(Config.ANIM_FADE)
+			end
+		end)
+	end
+
 	c.trove:Add(function()
 		table.clear(tracks)
 		current = nil
+		dashing = nil
 	end)
 end
 
@@ -83,12 +103,16 @@ function AnimationController.play(c: Ctx)
 	end
 end
 
--- on top of the state track, which keeps playing underneath
 function AnimationController.dash(dir: Types.DashDir)
 	local track = tracks[DASH[dir]]
-	if track then
-		track:Play(Config.ANIM_FADE)
+	if not track then
+		return
 	end
+	if current then
+		current:Stop(Config.ANIM_FADE)
+	end
+	dashing = track
+	track:Play(Config.ANIM_FADE)
 end
 
 return AnimationController
