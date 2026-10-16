@@ -39,6 +39,7 @@ export type Ctx = {
 	char: Model,
 	hum: Humanoid,
 	root: BasePart,
+	rootJoint: Motor6D,
 	attach: Attachment,
 	lv: LinearVelocity,
 	align: AlignOrientation,
@@ -53,6 +54,9 @@ export type Ctx = {
 	lastWallPart: BasePart?,
 	cooldownUntil: { [Types.MoveState]: number },
 	dashCooldownUntil: number,
+	lean: Vector2,
+	leanBase: CFrame,
+	leanSet: CFrame,
 
 	wall: Types.WallHit?,
 	vault: Types.VaultHit?,
@@ -65,6 +69,7 @@ local Context = {}
 function Context.new(char: Model): Ctx
 	local hum = char:WaitForChild("Humanoid") :: Humanoid
 	local root = char:WaitForChild("HumanoidRootPart") :: BasePart
+	local rootJoint = root:WaitForChild("RootJoint") :: Motor6D
 	local trove = Trove.new()
 
 	hum.UseJumpPower = true
@@ -99,6 +104,7 @@ function Context.new(char: Model): Ctx
 		char = char,
 		hum = hum,
 		root = root,
+		rootJoint = rootJoint,
 		attach = attach,
 		lv = lv,
 		align = align,
@@ -112,6 +118,9 @@ function Context.new(char: Model): Ctx
 		landedAt = 0,
 		cooldownUntil = {},
 		dashCooldownUntil = 0,
+		lean = Vector2.zero,
+		leanBase = CFrame.identity,
+		leanSet = CFrame.identity,
 	}
 end
 

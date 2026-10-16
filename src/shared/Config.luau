@@ -71,6 +71,7 @@ return table.freeze({
 	DASH_AIR_HOLD = 0.1,
 	LEAN_WALK = 9,
 	LEAN_SPRINT = 11,
+	LEAN_TIME = 0.08,
 	HURT_THRESHOLD = 0.3,
 	HURT_SPEED_PENALTY = 4,
 	DODGE_TIME = 0.15,
