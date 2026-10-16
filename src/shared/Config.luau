@@ -43,7 +43,7 @@ return table.freeze({
 	CLING_MAX_TIME = 3,
 	CLING_SLIDE_SPEED = 2,
 	LEAP_OUT = 60,
-	LEAP_UP = 60,
+	LEAP_UP = 80,
 	LEAP_TIME = 0.35,
 	LEAP_GAIN = 6,
 	BOOST_UP = 100,
@@ -82,7 +82,7 @@ return table.freeze({
 	TOP_MIN_NORMAL_Y = 0.8,
 
 	DASH_SPEED = 55,
-	DASH_TIME = 0.2,
+	DASH_TIME = 0.25,
 	DASH_TAIL = 0.15,
 	DASH_AIR_HOLD = 0.1,
 	LEAN_WALK = 9,
