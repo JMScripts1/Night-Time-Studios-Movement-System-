@@ -13,6 +13,7 @@ export type MoveState =
 	| "Jump"
 	| "DoubleJump"
 	| "SlideJump"
+	| "LedgeLeap"
 	| "Fall"
 	| "WallRun"
 	| "WallLeap"
@@ -27,7 +28,14 @@ export type MoveState =
 export type MoveGroup = "Grounded" | "Airborne" | "Wall"
 
 -- WallRun and WallLeap play one of their sides, R6 can't mirror at runtime
-export type AnimName = MoveState | "WallRunLeft" | "WallRunRight" | "WallLeapLeft" | "WallLeapRight" | "Roll"
+export type AnimName =
+	MoveState
+	| "WallRunLeft"
+	| "WallRunRight"
+	| "WallLeapLeft"
+	| "WallLeapRight"
+	| "Roll"
+	| "LedgeLeap2"
 
 export type MoveDef = {
 	group: MoveGroup,

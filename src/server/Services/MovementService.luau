@@ -28,6 +28,9 @@ local ANY_SPEED = math.huge
 
 local ATTACHED: { Types.MoveState } = { "WallRun", "WallCling" }
 
+-- the slide jump that opens it reached the server about as late as the leap does
+local LEAP_WINDOW = Config.LEDGE_LEAP_WINDOW + Config.COOLDOWN_TOLERANCE
+
 -- the client only ever sends wire names
 local WIRE: { [string]: Types.MoveState } = {}
 for state: Types.MoveState, def in MoveDefs do
@@ -112,6 +115,13 @@ local function canEnter(
 		return onGround(root) and Probes.vaultLow(root, reach(st, Config.VAULT_REACH)) ~= nil
 	elseif to == "VaultMid" then
 		return Probes.vaultMid(root, reach(st, verticalLag(root))) ~= nil
+	elseif to == "LedgeLeap" then
+		-- the client looks as far ahead as its launch carries it in the window, and the server's copy trails behind that
+		local v = root.AssemblyLinearVelocity
+		local flat = Vector3.new(v.X, 0, v.Z)
+		local launch = st.speed.measured * Config.SLIDE_JUMP_LAUNCH * Config.LEDGE_LEAP_WINDOW
+		local ahead = if flat.Magnitude > 0 then flat.Unit * reach(st, launch) else nil
+		return now - move.since <= LEAP_WINDOW and Probes.isOverDrop(root, ahead)
 	end
 	return true
 end

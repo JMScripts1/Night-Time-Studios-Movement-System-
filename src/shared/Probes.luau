@@ -9,6 +9,8 @@ local Probes = {}
 local params = RaycastParams.new()
 params.CollisionGroup = "MoveProbe"
 
+local DROP_RAY = Vector3.new(0, -(Config.ROOT_HEIGHT + Config.LEDGE_LEAP_DROP), 0)
+
 local function isWallFace(hit: RaycastResult): boolean
 	return math.abs(hit.Normal.Y) <= Config.WALL_MAX_NORMAL_Y and hit.Instance.Anchored
 end
@@ -80,6 +82,14 @@ end
 function Probes.isOverLip(root: BasePart, dir: Vector3): boolean
 	local knee = root.Position + Vector3.new(0, Config.KNEE_Y, 0)
 	return workspace:Raycast(knee, dir * Config.WALL_REACH, params) == nil
+end
+
+-- no floor within LEDGE_LEAP_DROP under the feet, here or `ahead` of here
+function Probes.isOverDrop(root: BasePart, ahead: Vector3?): boolean
+	if workspace:Raycast(root.Position, DROP_RAY, params) == nil then
+		return true
+	end
+	return ahead ~= nil and workspace:Raycast(root.Position + ahead, DROP_RAY, params) == nil
 end
 
 function Probes.ceiling(root: BasePart): RaycastResult?

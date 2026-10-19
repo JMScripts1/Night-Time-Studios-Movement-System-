@@ -65,6 +65,12 @@ local rows: { [Types.MoveState]: Row } = {
 	DoubleJump = { group = "Airborne", to = { "Fall", "WallRun", "WallCling", "VaultMid", "Land", "Dash" } },
 	SlideJump = {
 		group = "Airborne",
+		to = { "LedgeLeap", "DoubleJump", "Fall", "WallRun", "WallCling", "VaultMid", "Land", "Dash" },
+	},
+	LedgeLeap = {
+		group = "Airborne",
+		duration = Config.LEDGE_LEAP_TIME,
+		after = "Fall",
 		to = { "DoubleJump", "Fall", "WallRun", "WallCling", "VaultMid", "Land", "Dash" },
 	},
 	Fall = { group = "Airborne", to = { "DoubleJump", "WallRun", "WallCling", "VaultMid", "Land", "Dash" } },
@@ -120,6 +126,8 @@ local function cap(wire: Types.MoveState): number
 	elseif wire == "SlideJump" then
 		-- the launch runs at a multiple of momentum, see Air on the client
 		return Config.MOMENTUM_MAX * Config.SLIDE_JUMP_LAUNCH
+	elseif wire == "LedgeLeap" then
+		return Config.MOMENTUM_MAX * Config.LEDGE_LEAP_LAUNCH
 	elseif rows[wire].isDash then
 		return DASH_CAP
 	end

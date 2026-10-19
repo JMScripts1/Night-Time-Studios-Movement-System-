@@ -37,6 +37,15 @@ return table.freeze({
 	SLIDE_JUMP_LAUNCH = 1.5,
 	SLIDE_JUMP_LIFT = 18,
 	SLIDE_JUMP_LAUNCH_TIME = 0.25,
+	-- a slide jump that clears a drop of LEDGE_LEAP_DROP within LEDGE_LEAP_WINDOW of takeoff turns into a ledge leap
+	LEDGE_LEAP_WINDOW = 0.2,
+	LEDGE_LEAP_DROP = 8,
+	LEDGE_LEAP_GAIN = 8,
+	LEDGE_LEAP_LAUNCH = 2,
+	LEDGE_LEAP_LIFT = 30,
+	LEDGE_LEAP_LAUNCH_TIME = 0.25,
+	-- the leap lasts as long as its animation, this is the most the server allows and the length until it loads
+	LEDGE_LEAP_TIME = 1,
 	-- degrees per second the slide turns toward the camera
 	SLIDE_TURN_RATE = 90,
 

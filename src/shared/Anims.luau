@@ -10,6 +10,7 @@ local SLOTS: { [string]: true } = {
 	WallLeapLeft = true,
 	WallLeapRight = true,
 	Roll = true,
+	LedgeLeap2 = true,
 }
 for state in MoveDefs do
 	SLOTS[state] = true
@@ -21,7 +22,7 @@ local Anims: { [Types.AnimName]: string } = {
 	Run = "rbxassetid://97365671049008",
 	Jump = "rbxassetid://91804113405885",
 	Slide = "rbxassetid://131338188389559",
-	SlideJump = "rbxassetid://103380111896974",
+	SlideJump = "rbxassetid://87854361282454",
 	CrouchIdle = "rbxassetid://118920925691918",
 	CrouchWalk = "rbxassetid://126287311643867",
 	WallRunLeft = "rbxassetid://74080959050186",
@@ -39,6 +40,8 @@ local Anims: { [Types.AnimName]: string } = {
 	DashL = "rbxassetid://90778754431207",
 	DashR = "rbxassetid://99540956567959",
 	Roll = "rbxassetid://120431676333500",
+	LedgeLeap = "rbxassetid://90219606237010",
+	LedgeLeap2 = "rbxassetid://120588070311007",
 }
 
 -- the old solver doesn't check keys in the table above, so a typo would just never play

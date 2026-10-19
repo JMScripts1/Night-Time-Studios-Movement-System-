@@ -17,9 +17,26 @@ type Ctx = Context.Ctx
 -- still going up faster than this means the ground under us is the one we just left
 local RISING = 1
 local TURN_RATE = math.rad(Config.AIR_TURN_RATE)
-local LIFT = Vector3.new(0, Config.SLIDE_JUMP_LIFT, 0)
 
 local CLINGS: { [Types.MoveState]: true } = { WallCling = true, WallBoost = true }
+
+type Launch = { gain: number, power: number, lift: Vector3, time: number }
+
+-- launched along the heading at momentum times power, held against gravity for a moment before the air takes over
+local LAUNCHES: { [Types.MoveState]: Launch } = {
+	SlideJump = {
+		gain = Config.SLIDE_JUMP_GAIN,
+		power = Config.SLIDE_JUMP_LAUNCH,
+		lift = Vector3.new(0, Config.SLIDE_JUMP_LIFT, 0),
+		time = Config.SLIDE_JUMP_LAUNCH_TIME,
+	},
+	LedgeLeap = {
+		gain = Config.LEDGE_LEAP_GAIN,
+		power = Config.LEDGE_LEAP_LAUNCH,
+		lift = Vector3.new(0, Config.LEDGE_LEAP_LIFT, 0),
+		time = Config.LEDGE_LEAP_LAUNCH_TIME,
+	},
+}
 
 local Air = {}
 
@@ -54,14 +71,15 @@ function Air.wall(c: Ctx): Types.MoveState?
 end
 
 function Air.enter(c: Ctx)
-	local state = c.state
+	local state: Types.MoveState = c.state
 	-- a dash never changes where the character was going, see Dash.exit
 	if not MoveDefs[c.prev].isDash then
 		c.heading = Context.travel(c)
 	end
 
-	if state == "SlideJump" then
-		c.momentum = math.min(Config.MOMENTUM_MAX, c.momentum + Config.SLIDE_JUMP_GAIN)
+	local launch = LAUNCHES[state]
+	if launch then
+		c.momentum = math.min(Config.MOMENTUM_MAX, c.momentum + launch.gain)
 	end
 	if state == "Jump" or state == "SlideJump" then
 		c.hum:ChangeState(Enum.HumanoidStateType.Jumping)
@@ -77,17 +95,31 @@ function Air.update(c: Ctx, dt: number): Types.MoveState?
 		return landed
 	end
 
-	-- the slide jump's launch holds its velocity against gravity for a moment, then the air takes over
-	if c.state == "SlideJump" then
-		if os.clock() - c.since < Config.SLIDE_JUMP_LAUNCH_TIME then
-			Context.drive(c, c.heading * c.momentum * Config.SLIDE_JUMP_LAUNCH + LIFT)
+	local elapsed = os.clock() - c.since
+	-- a slide jump that will clear a drop within the window turns into a leap at once, so its own animation never shows
+	if c.state == "SlideJump" and elapsed < Config.LEDGE_LEAP_WINDOW then
+		local ahead = c.heading * c.momentum * Config.SLIDE_JUMP_LAUNCH * (Config.LEDGE_LEAP_WINDOW - elapsed)
+		if Probes.isOverDrop(c.root, ahead) then
+			return "LedgeLeap"
+		end
+	end
+	-- the leap lasts as long as whichever animation it plays
+	local leapTime = if c.animLength > 0 then c.animLength else Config.LEDGE_LEAP_TIME
+	if c.state == "LedgeLeap" and elapsed >= leapTime then
+		return "Fall"
+	end
+
+	local launch = LAUNCHES[c.state]
+	if launch then
+		if elapsed < launch.time then
+			Context.drive(c, c.heading * c.momentum * launch.power + launch.lift)
 		else
 			c.lv.Enabled = false
 		end
 	end
 
 	-- a late press just after letting go of a cling or boost still catches the ledge
-	local isLetGo = c.state == "Fall" and CLINGS[c.prev] and os.clock() - c.since < Config.LEDGE_GRACE
+	local isLetGo = c.state == "Fall" and CLINGS[c.prev] and elapsed < Config.LEDGE_GRACE
 	if isLetGo and InputController.take("VaultMid") and Vault.findLedge(c) then
 		return "VaultMid"
 	end
@@ -118,7 +150,7 @@ function Air.update(c: Ctx, dt: number): Types.MoveState?
 	return nil
 end
 
--- only the slide jump's launch uses the mover in the air, leaving cuts it short
+-- only the launches use the mover in the air, leaving cuts one short
 function Air.exit(c: Ctx)
 	c.lv.Enabled = false
 end

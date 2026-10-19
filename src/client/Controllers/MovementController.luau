@@ -41,6 +41,7 @@ local STATES: { [Types.MoveState]: StateModule } = {
 	Jump = Air,
 	DoubleJump = Air,
 	SlideJump = Air,
+	LedgeLeap = Air,
 	Fall = Air,
 	WallRun = WallRun,
 	WallLeap = WallRun,
@@ -127,7 +128,7 @@ local function switch(c: Ctx, to: Types.MoveState)
 	if enter then
 		enter(c)
 	end
-	AnimationController.play(c)
+	c.animLength = AnimationController.play(c)
 	send(to)
 end
 

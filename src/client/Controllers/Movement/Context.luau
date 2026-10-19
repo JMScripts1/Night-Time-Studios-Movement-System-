@@ -50,6 +50,8 @@ export type Ctx = {
 	state: Types.MoveState,
 	prev: Types.MoveState,
 	since: number,
+	-- the length of the animation the state started with, for a state that lasts exactly as long
+	animLength: number,
 	momentum: number,
 	heading: Vector3,
 	airJumps: number,
@@ -117,6 +119,7 @@ function Context.new(char: Model): Ctx
 		state = "Idle",
 		prev = "Idle",
 		since = os.clock(),
+		animLength = 0,
 		momentum = Config.WALK_SPEED,
 		heading = Vector3.zero,
 		airJumps = 0,

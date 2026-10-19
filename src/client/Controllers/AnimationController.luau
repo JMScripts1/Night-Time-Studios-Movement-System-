@@ -13,6 +13,8 @@ local Dash = require(script.Parent.Movement.Dash)
 type Ctx = Context.Ctx
 
 local BOOST_MARKER = "Boost"
+-- the leap alternates between these, and lasts as long as whichever one plays
+local LEAPS: { Types.AnimName } = { "LedgeLeap", "LedgeLeap2" }
 
 -- these states outlast their one shot, so the fall loop takes over when it runs out
 local THEN_FALL: { [Types.AnimName]: true } = {
@@ -32,6 +34,7 @@ local current: AnimationTrack? = nil
 local dashing: AnimationTrack? = nil
 -- plays over the state track instead of taking over from it, the walk states keep going underneath
 local rolling: AnimationTrack? = nil
+local leaps = 0
 
 for name: Types.AnimName, id in Anims do
 	local anim = Instance.new("Animation")
@@ -130,7 +133,8 @@ local function dash(name: Types.AnimName)
 	end
 end
 
-function AnimationController.play(c: Ctx)
+-- returns the length of the animation the state plays, 0 until it has loaded
+function AnimationController.play(c: Ctx): number
 	-- a leap keeps the wall it left, so its side is the run's side
 	local isLeft = c.wall ~= nil and c.wall.side == "Left"
 	if MoveDefs[c.state].isDash then
@@ -139,6 +143,9 @@ function AnimationController.play(c: Ctx)
 		start(if isLeft then "WallRunLeft" else "WallRunRight")
 	elseif c.state == "WallLeap" then
 		start(if isLeft then "WallLeapLeft" else "WallLeapRight")
+	elseif c.state == "LedgeLeap" then
+		leaps = leaps % #LEAPS + 1
+		start(LEAPS[leaps])
 	else
 		start(c.state)
 	end
@@ -152,6 +159,9 @@ function AnimationController.play(c: Ctx)
 	if os.clock() >= c.rollUntil then
 		stopRoll()
 	end
+
+	local playing = if MoveDefs[c.state].isDash then dashing else current
+	return if playing then playing.Length else 0
 end
 
 function AnimationController.roll()
