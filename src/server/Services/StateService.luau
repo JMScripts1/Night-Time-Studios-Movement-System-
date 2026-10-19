@@ -18,9 +18,7 @@ export type CharState = {
 		cooldownUntil: { [Types.MoveState]: number },
 	},
 	dash: {
-		dashUntil: number,
 		dodgeUntil: number,
-		dashCooldownUntil: number,
 	},
 	speed: {
 		windowCap: number,
@@ -60,7 +58,7 @@ function StateService.add(char: Model)
 			groundedAt = 0,
 			cooldownUntil = {},
 		},
-		dash = { dashUntil = 0, dodgeUntil = 0, dashCooldownUntil = 0 },
+		dash = { dodgeUntil = 0 },
 		speed = {
 			windowCap = MoveDefs[SPAWN_STATE].cap,
 			lastGoodCFrame = pivot,

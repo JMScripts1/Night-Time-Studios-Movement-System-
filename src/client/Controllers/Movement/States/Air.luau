@@ -4,6 +4,7 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Config = require(ReplicatedStorage.Shared.Config)
+local MoveDefs = require(ReplicatedStorage.Shared.MoveDefs)
 local Probes = require(ReplicatedStorage.Shared.Probes)
 local Types = require(ReplicatedStorage.Shared.Types)
 local Context = require(script.Parent.Parent.Context)
@@ -53,7 +54,10 @@ end
 
 function Air.enter(c: Ctx)
 	local state = c.state
-	c.heading = Context.travel(c)
+	-- a dash never changes where the character was going, see Dash.exit
+	if not MoveDefs[c.prev].isDash then
+		c.heading = Context.travel(c)
+	end
 
 	if state == "SlideJump" then
 		c.momentum = math.min(Config.MOMENTUM_MAX, c.momentum + Config.SLIDE_JUMP_GAIN)

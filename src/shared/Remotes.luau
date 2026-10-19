@@ -16,6 +16,4 @@ end
 return table.freeze({
 	Move = remote("Move"),
 	MoveDeny = remote("MoveDeny"),
-	Dash = remote("Dash"),
-	DashFx = remote("DashFx"),
 })

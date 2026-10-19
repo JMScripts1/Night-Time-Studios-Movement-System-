@@ -24,11 +24,11 @@ local BINDS: { [Action]: Enum.KeyCode } = {
 }
 
 -- first held key wins, so W and D together is a forward dash
-local DASH_KEYS: { { key: Enum.KeyCode, dir: Types.DashDir } } = {
-	{ key = Enum.KeyCode.W, dir = "F" },
-	{ key = Enum.KeyCode.A, dir = "L" },
-	{ key = Enum.KeyCode.S, dir = "B" },
-	{ key = Enum.KeyCode.D, dir = "R" },
+local DASH_KEYS: { { key: Enum.KeyCode, state: Types.MoveState } } = {
+	{ key = Enum.KeyCode.W, state = "DashF" },
+	{ key = Enum.KeyCode.A, state = "DashL" },
+	{ key = Enum.KeyCode.S, state = "DashB" },
+	{ key = Enum.KeyCode.D, state = "DashR" },
 }
 
 local InputController = {}
@@ -52,13 +52,13 @@ function InputController.flush()
 	table.clear(pressed)
 end
 
-function InputController.dashDir(): Types.DashDir
+function InputController.dash(): Types.MoveState
 	for _, bind in DASH_KEYS do
 		if UserInputService:IsKeyDown(bind.key) then
-			return bind.dir
+			return bind.state
 		end
 	end
-	return "B"
+	return "DashB"
 end
 
 -- crouch is a toggle, and standing up to jump or sprint turns it off

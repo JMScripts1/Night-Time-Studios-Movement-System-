@@ -6,13 +6,12 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Config = require(ReplicatedStorage.Shared.Config)
 
-export type Action = "Move" | "Dash"
+export type Action = "Move"
 
 type Bucket = { tokens: number, stamp: number }
 
 local LIMITS: { [Action]: { burst: number, refill: number } } = {
 	Move = { burst = Config.MOVE_BURST, refill = Config.MOVE_REFILL },
-	Dash = { burst = Config.DASH_BURST, refill = Config.DASH_REFILL },
 }
 
 local RateLimit = {}

@@ -22,8 +22,6 @@ local UNUSED_STATES = {
 }
 
 export type DashRun = {
-	dir: Types.DashDir,
-	startedAt: number,
 	isAir: boolean,
 	-- the back dash keeps the direction it started in, and boostedAt is set by its animation's Boost marker
 	back: Vector3?,
@@ -60,7 +58,6 @@ export type Ctx = {
 	rollUntil: number,
 	lastWallPart: BasePart?,
 	cooldownUntil: { [Types.MoveState]: number },
-	dashCooldownUntil: number,
 	lean: Vector2,
 	leanBase: CFrame,
 	leanSet: CFrame,
@@ -127,7 +124,6 @@ function Context.new(char: Model): Ctx
 		takeoffY = 0,
 		rollUntil = 0,
 		cooldownUntil = {},
-		dashCooldownUntil = 0,
 		lean = Vector2.zero,
 		leanBase = CFrame.identity,
 		leanSet = CFrame.identity,

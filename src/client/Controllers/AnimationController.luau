@@ -5,6 +5,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Anims = require(ReplicatedStorage.Shared.Anims)
 local Config = require(ReplicatedStorage.Shared.Config)
+local MoveDefs = require(ReplicatedStorage.Shared.MoveDefs)
 local Types = require(ReplicatedStorage.Shared.Types)
 local Context = require(script.Parent.Movement.Context)
 local Dash = require(script.Parent.Movement.Dash)
@@ -12,8 +13,6 @@ local Dash = require(script.Parent.Movement.Dash)
 type Ctx = Context.Ctx
 
 local BOOST_MARKER = "Boost"
-
-local DASH: { [Types.DashDir]: Types.AnimName } = { F = "DashF", B = "DashB", L = "DashL", R = "DashR" }
 
 -- these states outlast their one shot, so the fall loop takes over when it runs out
 local THEN_FALL: { [Types.AnimName]: true } = {
@@ -86,11 +85,11 @@ function AnimationController.load(c: Ctx)
 		end
 	end
 
-	for _, name: Types.AnimName in DASH do
-		local track = tracks[name]
-		if not track then
+	for state: Types.MoveState, def in MoveDefs do
+		if not def.isDash then
 			continue
 		end
+		local track = tracks[state]
 		c.trove:Connect(track.Stopped, function()
 			if dashing ~= track then
 				return
@@ -118,10 +117,25 @@ function AnimationController.load(c: Ctx)
 	end)
 end
 
+-- a dash takes over from the state track instead of blending with it, so it plays to the end even once the dash is over
+local function dash(name: Types.AnimName)
+	local track = tracks[name]
+	dashing = track
+	if current then
+		current:Stop(Config.ANIM_FADE)
+	end
+	track:Play(Config.ANIM_FADE)
+	if name == "DashB" and track.Length > 0 then
+		track:AdjustSpeed(track.Length / Config.BACK_DASH_ANIM_TIME)
+	end
+end
+
 function AnimationController.play(c: Ctx)
 	-- a leap keeps the wall it left, so its side is the run's side
 	local isLeft = c.wall ~= nil and c.wall.side == "Left"
-	if c.state == "WallRun" then
+	if MoveDefs[c.state].isDash then
+		dash(c.state)
+	elseif c.state == "WallRun" then
 		start(if isLeft then "WallRunLeft" else "WallRunRight")
 	elseif c.state == "WallLeap" then
 		start(if isLeft then "WallLeapLeft" else "WallLeapRight")
@@ -146,22 +160,6 @@ function AnimationController.roll()
 	track:Play(Config.ANIM_FADE)
 	if track.Length > 0 then
 		track:AdjustSpeed(track.Length / Config.ROLL_TIME)
-	end
-end
-
-function AnimationController.dash(dir: Types.DashDir)
-	local track = tracks[DASH[dir]]
-	if not track then
-		return
-	end
-	stopRoll()
-	if current then
-		current:Stop(Config.ANIM_FADE)
-	end
-	dashing = track
-	track:Play(Config.ANIM_FADE)
-	if dir == "B" and track.Length > 0 then
-		track:AdjustSpeed(track.Length / Config.BACK_DASH_ANIM_TIME)
 	end
 end
 

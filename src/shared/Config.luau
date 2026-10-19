@@ -108,8 +108,6 @@ return table.freeze({
 	HURT_SPEED_PENALTY = 4,
 	DODGE_TIME = 0.15,
 	DASH_COOLDOWN = 1.2,
-	DASH_BURST = 3,
-	DASH_REFILL = 1,
 
 	KEYS = table.freeze({
 		SPRINT = Enum.KeyCode.W,

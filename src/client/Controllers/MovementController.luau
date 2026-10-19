@@ -46,6 +46,10 @@ local STATES: { [Types.MoveState]: StateModule } = {
 	WallLeap = WallRun,
 	WallCling = WallCling,
 	WallBoost = WallCling,
+	DashF = Dash,
+	DashB = Dash,
+	DashL = Dash,
+	DashR = Dash,
 }
 
 local ATTACHED: { [Types.MoveState]: true } = { WallRun = true, WallCling = true }
@@ -81,9 +85,6 @@ local function switch(c: Ctx, to: Types.MoveState)
 	if exit then
 		exit(c)
 	end
-	if c.dash and not Dash.FROM[to] then
-		Dash.finish(c)
-	end
 
 	if ATTACHED[from] then
 		blockRegrab(c, now + Config.WALL_REGRAB)
@@ -92,7 +93,7 @@ local function switch(c: Ctx, to: Types.MoveState)
 		c.airJumps = 0
 		c.lastWallPart = nil
 		c.landedAt = now
-		if STATES[to] == Ground and not c.dash and c.takeoffY - c.root.Position.Y >= Config.ROLL_HEIGHT then
+		if STATES[to] == Ground and c.takeoffY - c.root.Position.Y >= Config.ROLL_HEIGHT then
 			c.rollUntil = now + Config.ROLL_TIME
 			AnimationController.roll()
 		end
@@ -110,6 +111,9 @@ local function switch(c: Ctx, to: Types.MoveState)
 	end
 	if def.cooldown > 0 then
 		c.cooldownUntil[to] = now + def.cooldown
+		if def.shares then
+			c.cooldownUntil[def.shares] = now + def.cooldown
+		end
 	end
 
 	if Config.DEBUG then
@@ -138,15 +142,7 @@ end
 
 local function step(c: Ctx, dt: number)
 	if InputController.take("Dash") then
-		local dir: Types.DashDir = InputController.dashDir()
-		if Dash.start(c, dir) then
-			c.rollUntil = 0
-			AnimationController.dash(dir)
-		end
-	end
-	local run = c.dash
-	if run then
-		Dash.update(c, run)
+		MovementController.request(InputController.dash())
 	end
 
 	local nextState: Types.MoveState? = STATES[c.state].update(c, dt)
@@ -163,11 +159,6 @@ local function onDeny(state: string)
 		print("denied", state)
 	end
 	if not c then
-		return
-	elseif state == "Dash" then
-		if c.dash then
-			Dash.finish(c)
-		end
 		return
 	end
 

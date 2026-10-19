@@ -9,10 +9,6 @@ local SLOTS: { [string]: true } = {
 	WallRunRight = true,
 	WallLeapLeft = true,
 	WallLeapRight = true,
-	DashF = true,
-	DashB = true,
-	DashL = true,
-	DashR = true,
 	Roll = true,
 }
 for state in MoveDefs do

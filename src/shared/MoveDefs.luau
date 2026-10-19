@@ -4,7 +4,7 @@
 local Config = require(script.Parent.Config)
 local Types = require(script.Parent.Types)
 
-type Target = Types.MoveState | "Land"
+type Target = Types.MoveState | "Land" | "Dash"
 
 type Row = {
 	group: Types.MoveGroup,
@@ -12,19 +12,40 @@ type Row = {
 	duration: number?,
 	after: Types.MoveState?,
 	cooldown: number?,
+	shares: Types.MoveState?,
+	isDash: true?,
 	to: { Target },
 }
 
 local LAND: { Types.MoveState } = { "Walk", "Run", "Slide", "CrouchWalk" }
+local DASH: { Types.MoveState } = { "DashF", "DashB", "DashL", "DashR" }
 
-local WALK_TO: { Target } = { "Run", "CrouchWalk", "Jump", "Fall", "VaultLow" }
+local WALK_TO: { Target } = { "Run", "CrouchWalk", "Jump", "Fall", "VaultLow", "Dash" }
 local CROUCH_TO: { Target } = { "Walk", "Run", "Jump", "Fall" }
+-- nothing cuts a dash short, it hands over to whatever the character is doing once it's over
+local DASH_TO: { Target } = { "Walk", "Run", "CrouchWalk", "Fall" }
+
+-- the back dash's burst can outrun the other dashes, and no dash runs slower than momentum
+local DASH_CAP = math.max(Config.DASH_SPEED, Config.BACK_DASH_SPEED * Config.BACK_DASH_BOOST, Config.MOMENTUM_MAX)
+
+-- airborne so a dash off the ground is a takeoff and the end of one is a landing
+local function dash(duration: number, shares: Types.MoveState): Row
+	return {
+		group = "Airborne",
+		duration = duration,
+		after = "Fall",
+		cooldown = Config.DASH_COOLDOWN,
+		shares = shares,
+		isDash = true,
+		to = DASH_TO,
+	}
+end
 
 -- rows use wire names, Idle and CrouchIdle get filled in below
 local rows: { [Types.MoveState]: Row } = {
 	Idle = { group = "Grounded", wire = "Walk", to = WALK_TO },
 	Walk = { group = "Grounded", to = WALK_TO },
-	Run = { group = "Grounded", to = { "Walk", "Slide", "Jump", "Fall", "VaultLow" } },
+	Run = { group = "Grounded", to = { "Walk", "Slide", "Jump", "Fall", "VaultLow", "Dash" } },
 	Slide = {
 		group = "Grounded",
 		cooldown = Config.SLIDE_COOLDOWN,
@@ -40,10 +61,20 @@ local rows: { [Types.MoveState]: Row } = {
 		to = { "Run", "Walk", "Fall" },
 	},
 
-	Jump = { group = "Airborne", to = { "DoubleJump", "Fall", "WallRun", "WallCling", "VaultMid", "Land" } },
-	DoubleJump = { group = "Airborne", to = { "Fall", "WallRun", "WallCling", "VaultMid", "Land" } },
-	SlideJump = { group = "Airborne", to = { "DoubleJump", "Fall", "WallRun", "WallCling", "VaultMid", "Land" } },
-	Fall = { group = "Airborne", to = { "DoubleJump", "WallRun", "WallCling", "VaultMid", "Land" } },
+	Jump = { group = "Airborne", to = { "DoubleJump", "Fall", "WallRun", "WallCling", "VaultMid", "Land", "Dash" } },
+	DoubleJump = { group = "Airborne", to = { "Fall", "WallRun", "WallCling", "VaultMid", "Land", "Dash" } },
+	SlideJump = {
+		group = "Airborne",
+		to = { "DoubleJump", "Fall", "WallRun", "WallCling", "VaultMid", "Land", "Dash" },
+	},
+	Fall = { group = "Airborne", to = { "DoubleJump", "WallRun", "WallCling", "VaultMid", "Land", "Dash" } },
+
+	-- front and back share a cooldown and so do the sides, so a side dash chains into a front one
+	DashF = dash(Config.DASH_TIME, "DashB"),
+	-- the burst comes at its animation's marker, which is never later than the end of the backstep
+	DashB = dash(Config.BACK_DASH_TIME + Config.BACK_DASH_BOOST_TIME, "DashF"),
+	DashL = dash(Config.DASH_TIME, "DashR"),
+	DashR = dash(Config.DASH_TIME, "DashL"),
 
 	WallRun = {
 		group = "Wall",
@@ -86,6 +117,8 @@ local function cap(wire: Types.MoveState): number
 	elseif wire == "WallLeap" then
 		-- the leap's push goes past momentum, see WallRun on the client
 		return Config.MOMENTUM_MAX + Config.LEAP_GAIN + Config.LEAP_OUT
+	elseif rows[wire].isDash then
+		return DASH_CAP
 	end
 	return Config.MOMENTUM_MAX
 end
@@ -100,6 +133,10 @@ for state: Types.MoveState, row in rows do
 	for _, target: Target in row.to do
 		if target == "Land" then
 			for _, s: Types.MoveState in LAND do
+				to[s] = true
+			end
+		elseif target == "Dash" then
+			for _, s: Types.MoveState in DASH do
 				to[s] = true
 			end
 		else
@@ -124,6 +161,8 @@ for state: Types.MoveState, row in rows do
 		cooldown = row.cooldown or 0,
 		duration = row.duration,
 		after = row.after,
+		shares = row.shares,
+		isDash = row.isDash == true,
 		to = to,
 	}
 	MoveDefs[state] = def
@@ -141,6 +180,7 @@ for state, def in MoveDefs do
 		assert(MoveDefs[target], `{state} goes to {target}, which has no row`)
 	end
 	assert(not def.after or MoveDefs[def.after], `{state} ends in a state with no row`)
+	assert(not def.shares or MoveDefs[def.shares], `{state} shares a cooldown with a state with no row`)
 end
 
 return table.freeze(MoveDefs)
