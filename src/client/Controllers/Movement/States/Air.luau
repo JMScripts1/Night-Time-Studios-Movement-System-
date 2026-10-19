@@ -17,6 +17,7 @@ type Ctx = Context.Ctx
 -- still going up faster than this means the ground under us is the one we just left
 local RISING = 1
 local TURN_RATE = math.rad(Config.AIR_TURN_RATE)
+local LIFT = Vector3.new(0, Config.SLIDE_JUMP_LIFT, 0)
 
 local CLINGS: { [Types.MoveState]: true } = { WallCling = true, WallBoost = true }
 
@@ -76,6 +77,15 @@ function Air.update(c: Ctx, dt: number): Types.MoveState?
 		return landed
 	end
 
+	-- the slide jump's launch holds its velocity against gravity for a moment, then the air takes over
+	if c.state == "SlideJump" then
+		if os.clock() - c.since < Config.SLIDE_JUMP_LAUNCH_TIME then
+			Context.drive(c, c.heading * c.momentum * Config.SLIDE_JUMP_LAUNCH + LIFT)
+		else
+			c.lv.Enabled = false
+		end
+	end
+
 	-- a late press just after letting go of a cling or boost still catches the ledge
 	local isLetGo = c.state == "Fall" and CLINGS[c.prev] and os.clock() - c.since < Config.LEDGE_GRACE
 	if isLetGo and InputController.take("VaultMid") and Vault.findLedge(c) then
@@ -106,6 +116,11 @@ function Air.update(c: Ctx, dt: number): Types.MoveState?
 	c.hum:Move(c.heading)
 	c.hum.WalkSpeed = math.max(c.momentum, Config.WALK_SPEED)
 	return nil
+end
+
+-- only the slide jump's launch uses the mover in the air, leaving cuts it short
+function Air.exit(c: Ctx)
+	c.lv.Enabled = false
 end
 
 return Air

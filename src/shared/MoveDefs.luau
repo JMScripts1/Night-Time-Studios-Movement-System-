@@ -117,6 +117,9 @@ local function cap(wire: Types.MoveState): number
 	elseif wire == "WallLeap" then
 		-- the leap's push goes past momentum, see WallRun on the client
 		return Config.MOMENTUM_MAX + Config.LEAP_GAIN + Config.LEAP_OUT
+	elseif wire == "SlideJump" then
+		-- the launch runs at a multiple of momentum, see Air on the client
+		return Config.MOMENTUM_MAX * Config.SLIDE_JUMP_LAUNCH
 	elseif rows[wire].isDash then
 		return DASH_CAP
 	end

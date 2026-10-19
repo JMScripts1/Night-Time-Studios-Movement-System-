@@ -33,6 +33,10 @@ return table.freeze({
 	SLIDE_END_SPEED = 10,
 	SLIDE_COOLDOWN = 0.6,
 	SLIDE_JUMP_GAIN = 4,
+	-- the slide jump launches at momentum times this plus SLIDE_JUMP_LIFT up, held for SLIDE_JUMP_LAUNCH_TIME
+	SLIDE_JUMP_LAUNCH = 1.5,
+	SLIDE_JUMP_LIFT = 18,
+	SLIDE_JUMP_LAUNCH_TIME = 0.25,
 	-- degrees per second the slide turns toward the camera
 	SLIDE_TURN_RATE = 90,
 
