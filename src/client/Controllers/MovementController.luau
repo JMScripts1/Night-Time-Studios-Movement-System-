@@ -158,7 +158,8 @@ local function onDeny(state: string)
 	if Config.DEBUG then
 		print("denied", state)
 	end
-	if not c then
+	-- a denial that lands after the client moved on is for an intent the newer one replaced, the server judges that one
+	if not c or MoveDefs[c.state].wire ~= state then
 		return
 	end
 
