@@ -35,6 +35,7 @@ export type AnimName =
 	| "DashB"
 	| "DashL"
 	| "DashR"
+	| "Roll"
 
 export type MoveDef = {
 	group: MoveGroup,

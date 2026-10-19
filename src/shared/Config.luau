@@ -21,6 +21,11 @@ return table.freeze({
 	DOUBLE_JUMP_POWER = 80,
 	MAX_AIR_JUMPS = 1,
 	COYOTE = 0.15,
+	-- a drop of at least this below where the ground was left lands in a roll
+	ROLL_HEIGHT = 10,
+	ROLL_SPEED = 20,
+	-- the roll animation is 26 frames at 60 fps, stretched to this
+	ROLL_TIME = 26 / 60,
 
 	SLIDE_MIN_SPEED = 18,
 	SLIDE_BOOST = 1.1,

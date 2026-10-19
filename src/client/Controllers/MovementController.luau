@@ -92,11 +92,21 @@ local function switch(c: Ctx, to: Types.MoveState)
 		c.airJumps = 0
 		c.lastWallPart = nil
 		c.landedAt = now
+		if STATES[to] == Ground and not c.dash and c.takeoffY - c.root.Position.Y >= Config.ROLL_HEIGHT then
+			c.rollUntil = now + Config.ROLL_TIME
+			AnimationController.roll()
+		end
+	elseif MoveDefs[from].group == "Grounded" and def.group ~= "Grounded" then
+		c.takeoffY = c.root.Position.Y
 	elseif to == "DoubleJump" then
 		c.airJumps += 1
 	elseif ATTACHED[to] then
 		c.lastWallPart = (c.wall :: Types.WallHit).part
 		blockRegrab(c, now + (def.duration or 0) + Config.WALL_REGRAB)
+	end
+	-- the roll only carries on through the walk states
+	if STATES[to] ~= Ground then
+		c.rollUntil = 0
 	end
 	if def.cooldown > 0 then
 		c.cooldownUntil[to] = now + def.cooldown
@@ -130,6 +140,7 @@ local function step(c: Ctx, dt: number)
 	if InputController.take("Dash") then
 		local dir: Types.DashDir = InputController.dashDir()
 		if Dash.start(c, dir) then
+			c.rollUntil = 0
 			AnimationController.dash(dir)
 		end
 	end

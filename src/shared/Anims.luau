@@ -13,6 +13,7 @@ local SLOTS: { [string]: true } = {
 	DashB = true,
 	DashL = true,
 	DashR = true,
+	Roll = true,
 }
 for state in MoveDefs do
 	SLOTS[state] = true
@@ -41,6 +42,7 @@ local Anims: { [Types.AnimName]: string } = {
 	DashF = "rbxassetid://132385598213592",
 	DashL = "rbxassetid://90778754431207",
 	DashR = "rbxassetid://99540956567959",
+	Roll = "rbxassetid://120431676333500",
 }
 
 -- the old solver doesn't check keys in the table above, so a typo would just never play

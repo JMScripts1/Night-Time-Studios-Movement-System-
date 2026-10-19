@@ -31,6 +31,8 @@ local animations: { [Types.AnimName]: Animation } = {}
 local tracks: { [Types.AnimName]: AnimationTrack } = {}
 local current: AnimationTrack? = nil
 local dashing: AnimationTrack? = nil
+-- plays over the state track instead of taking over from it, the walk states keep going underneath
+local rolling: AnimationTrack? = nil
 
 for name: Types.AnimName, id in Anims do
 	local anim = Instance.new("Animation")
@@ -58,11 +60,19 @@ local function start(name: Types.AnimName)
 	end
 end
 
+local function stopRoll()
+	if rolling then
+		rolling:Stop(Config.ANIM_FADE)
+		rolling = nil
+	end
+end
+
 function AnimationController.load(c: Ctx)
 	local animator = c.hum:WaitForChild("Animator") :: Animator
 	table.clear(tracks)
 	current = nil
 	dashing = nil
+	rolling = nil
 
 	for name: Types.AnimName, anim in animations do
 		local track = animator:LoadAnimation(anim)
@@ -104,6 +114,7 @@ function AnimationController.load(c: Ctx)
 		table.clear(tracks)
 		current = nil
 		dashing = nil
+		rolling = nil
 	end)
 end
 
@@ -123,6 +134,19 @@ function AnimationController.play(c: Ctx)
 	if run and current and current.Length > 0 then
 		current:AdjustSpeed(current.Length / run.time)
 	end
+
+	if os.clock() >= c.rollUntil then
+		stopRoll()
+	end
+end
+
+function AnimationController.roll()
+	local track = tracks.Roll
+	rolling = track
+	track:Play(Config.ANIM_FADE)
+	if track.Length > 0 then
+		track:AdjustSpeed(track.Length / Config.ROLL_TIME)
+	end
 end
 
 function AnimationController.dash(dir: Types.DashDir)
@@ -130,6 +154,7 @@ function AnimationController.dash(dir: Types.DashDir)
 	if not track then
 		return
 	end
+	stopRoll()
 	if current then
 		current:Stop(Config.ANIM_FADE)
 	end

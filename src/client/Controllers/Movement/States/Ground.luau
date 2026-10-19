@@ -76,6 +76,11 @@ function Ground.update(c: Ctx, dt: number): Types.MoveState?
 
 	local isHurt = hum.Health <= hum.MaxHealth * Config.HURT_THRESHOLD
 	hum.WalkSpeed = if state == "Run" and isHurt then c.momentum - Config.HURT_SPEED_PENALTY else c.momentum
+	-- the landing roll carries on forward with no keys held
+	if os.clock() < c.rollUntil then
+		hum:Move(Context.look(c))
+		hum.WalkSpeed = math.max(hum.WalkSpeed, Config.ROLL_SPEED)
+	end
 
 	if not Ground.isGrounded(c) then
 		return "Fall"
