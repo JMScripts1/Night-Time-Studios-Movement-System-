@@ -41,6 +41,11 @@ end
 -- while a dash plays the state track is only remembered, it starts when the dash ends
 local function start(name: Types.AnimName)
 	local track = tracks[name]
+	-- a running jump keeps the run going slowed down instead of cutting to the jump, landing in Run speeds it back up
+	if current and current == tracks.Run and (name == "Jump" or name == "Run") then
+		current:AdjustSpeed(if name == "Jump" then Config.RUN_JUMP_ANIM_SPEED else 1)
+		return
+	end
 	if track == current then
 		return
 	end
