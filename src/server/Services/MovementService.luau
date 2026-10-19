@@ -81,6 +81,11 @@ local function reach(st: CharState, base: number): number
 	return base + Config.PROBE_SLACK + st.speed.measured * Config.PROBE_LAG
 end
 
+-- the measured speed is flat only, so jumps and falls trail by their own vertical speed, capped so it can't be inflated
+local function verticalLag(root: BasePart): number
+	return math.min(math.abs(root.AssemblyLinearVelocity.Y), Config.BOOST_UP) * Config.PROBE_LAG
+end
+
 local function blockRegrab(st: CharState, untilTime: number)
 	for _, state: Types.MoveState in ATTACHED do
 		st.move.cooldownUntil[state] = untilTime
@@ -110,7 +115,7 @@ local function canEnter(
 	end
 
 	if toGroup == "Grounded" and fromGroup ~= "Grounded" then
-		return onGround(root)
+		return Probes.ground(root, GROUND_REACH + verticalLag(root)) ~= nil
 	elseif isTakeoff then
 		return onGround(root) or now - move.groundedAt <= COYOTE_WINDOW
 	elseif to == "DoubleJump" then
@@ -124,9 +129,7 @@ local function canEnter(
 	elseif to == "VaultLow" then
 		return onGround(root) and Probes.vaultLow(root, reach(st, Config.VAULT_REACH)) ~= nil
 	elseif to == "VaultMid" then
-		-- the measured speed is flat only, and a boost or a jump trails the client mostly vertically
-		local climb = math.min(math.abs(root.AssemblyLinearVelocity.Y), Config.BOOST_UP)
-		return Probes.vaultMid(root, reach(st, climb * Config.PROBE_LAG)) ~= nil
+		return Probes.vaultMid(root, reach(st, verticalLag(root))) ~= nil
 	end
 	return true
 end
