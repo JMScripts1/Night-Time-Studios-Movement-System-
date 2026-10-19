@@ -7,8 +7,11 @@ local Anims = require(ReplicatedStorage.Shared.Anims)
 local Config = require(ReplicatedStorage.Shared.Config)
 local Types = require(ReplicatedStorage.Shared.Types)
 local Context = require(script.Parent.Movement.Context)
+local Dash = require(script.Parent.Movement.Dash)
 
 type Ctx = Context.Ctx
+
+local BOOST_MARKER = "Boost"
 
 local DASH: { [Types.DashDir]: Types.AnimName } = { F = "DashF", B = "DashB", L = "DashL", R = "DashR" }
 
@@ -84,6 +87,14 @@ function AnimationController.load(c: Ctx)
 		end)
 	end
 
+	-- the back dash's burst is keyed to its animation
+	local back = tracks.DashB
+	if back then
+		c.trove:Connect(back:GetMarkerReachedSignal(BOOST_MARKER), function()
+			Dash.boost(c)
+		end)
+	end
+
 	c.trove:Add(function()
 		table.clear(tracks)
 		current = nil
@@ -119,6 +130,9 @@ function AnimationController.dash(dir: Types.DashDir)
 	end
 	dashing = track
 	track:Play(Config.ANIM_FADE)
+	if dir == "B" and track.Length > 0 then
+		track:AdjustSpeed(track.Length / Config.BACK_DASH_ANIM_TIME)
+	end
 end
 
 return AnimationController

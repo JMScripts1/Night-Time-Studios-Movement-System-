@@ -25,6 +25,9 @@ export type DashRun = {
 	dir: Types.DashDir,
 	startedAt: number,
 	isAir: boolean,
+	-- the back dash keeps the direction it started in, and boostedAt is set by its animation's Boost marker
+	back: Vector3?,
+	boostedAt: number?,
 }
 
 export type VaultRun = {

@@ -48,13 +48,52 @@ function Dash.start(c: Ctx, dir: Types.DashDir): boolean
 		return false
 	end
 
-	c.dash = { dir = dir, startedAt = now, isAir = MoveDefs[c.state].group == "Airborne" }
+	c.dash = {
+		dir = dir,
+		startedAt = now,
+		isAir = MoveDefs[c.state].group == "Airborne",
+		back = if dir == "B" then -Context.look(c) else nil,
+	}
 	c.dashCooldownUntil = now + Config.DASH_COOLDOWN
 	Remotes.Dash:FireServer(dir)
 	return true
 end
 
+-- fired by the Boost marker in the DashB animation, a backstep that already ran out gets nothing
+function Dash.boost(c: Ctx)
+	local run = c.dash
+	if run and run.back and not run.boostedAt then
+		run.boostedAt = os.clock()
+	end
+end
+
+-- a slow backstep, then a burst at the marker. in the air it holds its height the whole way
+local function updateBack(c: Ctx, run: Context.DashRun, back: Vector3)
+	local now = os.clock()
+	local boostedAt = run.boostedAt
+	local isOver = if boostedAt
+		then now - boostedAt >= Config.BACK_DASH_BOOST_TIME
+		else now - run.startedAt >= Config.BACK_DASH_TIME
+	if isOver then
+		Dash.finish(c)
+		return
+	end
+
+	local speed = Config.BACK_DASH_SPEED * (if boostedAt then Config.BACK_DASH_BOOST else Config.BACK_DASH_DRIFT)
+	if run.isAir then
+		Context.drive(c, back * speed)
+	else
+		Context.glide(c, back * speed)
+	end
+end
+
 function Dash.update(c: Ctx, run: Context.DashRun)
+	local back = run.back
+	if back then
+		updateBack(c, run, back)
+		return
+	end
+
 	local elapsed = os.clock() - run.startedAt
 	if elapsed >= Config.DASH_TIME then
 		Dash.finish(c)

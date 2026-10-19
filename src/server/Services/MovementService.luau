@@ -44,6 +44,11 @@ local DASH_FROM: { [Types.MoveState]: true } = {
 
 local DIRS: { [string]: Types.DashDir } = { F = "F", B = "B", L = "L", R = "R" }
 
+-- the back dash's burst can outrun the other dashes
+local DASH_CAP = math.max(Config.DASH_SPEED, Config.BACK_DASH_SPEED * Config.BACK_DASH_BOOST)
+-- the burst comes at its animation's marker, which is never later than the end of the backstep
+local BACK_DASH_TIME = Config.BACK_DASH_TIME + Config.BACK_DASH_BOOST_TIME
+
 -- the client only ever sends wire names
 local WIRE: { [string]: Types.MoveState } = {}
 for state: Types.MoveState, def in MoveDefs do
@@ -222,10 +227,10 @@ local function onDash(plr: Player, dir: unknown)
 		return
 	end
 
-	dash.dashUntil = now + Config.DASH_TIME
+	dash.dashUntil = now + if dashDir == "B" then BACK_DASH_TIME else Config.DASH_TIME
 	dash.dodgeUntil = now + Config.DODGE_TIME
 	dash.dashCooldownUntil = now + Config.DASH_COOLDOWN
-	st.speed.windowCap = math.max(st.speed.windowCap, Config.DASH_SPEED)
+	st.speed.windowCap = math.max(st.speed.windowCap, DASH_CAP)
 
 	for _, other in Players:GetPlayers() do
 		if other ~= plr then
@@ -273,7 +278,7 @@ local function sample(char: Model, st: CharState, now: number)
 	local state: Types.MoveState = StateService.current(char)
 	speed.windowCap = math.max(MoveDefs[state].cap, speed.windowCap - Config.MOMENTUM_GROUND_DECAY * dt)
 	if now < st.dash.dashUntil then
-		speed.windowCap = math.max(speed.windowCap, Config.DASH_SPEED)
+		speed.windowCap = math.max(speed.windowCap, DASH_CAP)
 	end
 	char:SetAttribute("MoveState", state)
 end
