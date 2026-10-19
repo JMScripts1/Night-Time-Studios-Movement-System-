@@ -78,8 +78,11 @@ function Air.update(c: Ctx, dt: number): Types.MoveState?
 		return "VaultMid"
 	end
 
-	-- a wall in reach wins over the air jump
+	-- a ledge in reach wins over a wall, and a wall over the air jump
 	if InputController.take("Jump") then
+		if Vault.findLedge(c) then
+			return "VaultMid"
+		end
 		local wall: Types.MoveState? = Air.wall(c)
 		if wall then
 			return wall

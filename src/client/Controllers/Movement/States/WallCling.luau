@@ -36,13 +36,16 @@ function WallCling.update(c: Ctx): Types.MoveState?
 	local landed: Types.MoveState? = Air.land(c)
 	if landed then
 		return landed
-	elseif InputController.take("VaultMid") and Vault.findLedge(c) then
+	end
+	-- space pulls up onto a ledge in reach before it boosts or grabs another wall
+	local isJump = InputController.take("Jump")
+	if (isJump or InputController.take("VaultMid")) and Vault.findLedge(c) then
 		return "VaultMid"
 	end
 	local elapsed = os.clock() - c.since
 
 	if c.state == "WallCling" then
-		if InputController.take("Jump") then
+		if isJump then
 			return "WallBoost"
 		elseif elapsed >= Config.CLING_MAX_TIME or not Probes.wall(c.root, math.huge) then
 			return "Fall"
@@ -50,7 +53,7 @@ function WallCling.update(c: Ctx): Types.MoveState?
 		return nil
 	end
 
-	if InputController.take("Jump") then
+	if isJump then
 		local wall: Types.MoveState? = Air.wall(c)
 		if wall then
 			return wall
