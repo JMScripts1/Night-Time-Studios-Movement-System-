@@ -11,6 +11,7 @@ local Types = require(ReplicatedStorage.Shared.Types)
 export type Action = "Sprint" | "Crouch" | "Jump" | "Dash" | "VaultMid"
 
 local SPRINT: Action = "Sprint"
+local CROUCH: Action = "Crouch"
 
 -- above the default controls and sunk, so Space never jumps the humanoid
 local PRIORITY = Enum.ContextActionPriority.High.Value
@@ -60,12 +61,16 @@ function InputController.dashDir(): Types.DashDir
 	return "B"
 end
 
+-- crouch is a toggle, and standing up to jump or sprint turns it off
 for action: Action, key in BINDS do
 	ContextActionService:BindActionAtPriority(`Move{action}`, function(_, inputState: Enum.UserInputState)
 		if inputState == Enum.UserInputState.Begin then
-			held[action] = true
+			held[action] = if action == CROUCH then not held[CROUCH] else true
 			pressed[action] = true
-		else
+			if action == "Jump" then
+				held[CROUCH] = nil
+			end
+		elseif action ~= CROUCH then
 			held[action] = nil
 		end
 		return Enum.ContextActionResult.Sink
@@ -80,6 +85,7 @@ UserInputService.InputBegan:Connect(function(input: InputObject, isProcessed: bo
 	local now = os.clock()
 	if now - lastTap <= Config.DOUBLE_TAP then
 		held[SPRINT] = true
+		held[CROUCH] = nil
 	end
 	lastTap = now
 end)
