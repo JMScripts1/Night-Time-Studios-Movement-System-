@@ -13,6 +13,7 @@ local Dash = require(script.Parent.Movement.Dash)
 type Ctx = Context.Ctx
 
 local BOOST_MARKER = "Boost"
+local BACK_DASH: Types.AnimName = "DashB"
 -- the leap alternates between these, and lasts as long as whichever one plays
 local LEAPS: { Types.AnimName } = { "LedgeLeap", "LedgeLeap2" }
 
@@ -51,7 +52,7 @@ for state: Types.MoveState, def in MoveDefs do
 end
 
 local function isThenFall(track: AnimationTrack): boolean
-	for name in THEN_FALL do
+	for name: Types.AnimName in THEN_FALL do
 		if tracks[name] == track then
 			return true
 		end
@@ -109,7 +110,7 @@ function AnimationController.load(c: Ctx)
 		end
 	end
 
-	for _, name in DASH_ANIMS do
+	for _, name: Types.AnimName in DASH_ANIMS do
 		local track = tracks[name]
 		c.trove:Connect(track.Stopped, function()
 			if dashing ~= track then
@@ -123,12 +124,9 @@ function AnimationController.load(c: Ctx)
 	end
 
 	-- the back dash's burst is keyed to its animation
-	local back = tracks.DashB
-	if back then
-		c.trove:Connect(back:GetMarkerReachedSignal(BOOST_MARKER), function()
-			Dash.boost(c)
-		end)
-	end
+	c.trove:Connect(tracks[BACK_DASH]:GetMarkerReachedSignal(BOOST_MARKER), function()
+		Dash.boost(c)
+	end)
 
 	c.trove:Add(function()
 		table.clear(tracks)
