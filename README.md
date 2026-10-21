@@ -1,6 +1,6 @@
 # Night Time Studios Movement System
 
-Momentum based movement for an R6 RPG: sprint, slide, jumps, a ledge leap, wall movement, vaults, a directional dash and a landing roll. The client moves its own character, the server checks it and keeps its own record of what each player is allowed to be doing.
+Momentum based movement for an R6 RPG: sprint, slide, jumps, a ledge leap, wall movement, mantling, a directional dash and a landing roll. The client moves its own character, the server checks it and keeps its own record of what each player is allowed to be doing.
 
 **Status:** implemented and playtested in Studio. Every number lives in `Config.luau` and is tuned by playing at real ping.
 
@@ -15,7 +15,7 @@ References like C5 or C20 point at sections of `CONVENTIONS.md`, the rulebook fo
 3. [Transitions](#3-transitions)
 4. [Momentum](#4-momentum)
 5. [Probes](#5-probes)
-6. [Vault](#6-vault)
+6. [Mantle](#6-mantle)
 7. [Server](#7-server)
 8. [Remotes](#8-remotes)
 9. [Client](#9-client)
@@ -44,7 +44,7 @@ Fixed decisions the rest of the document builds on.
 
 ## 2. States
 
-21 states in three groups. **Wire** is the name the client sends to the server. Idle and CrouchIdle are never sent on their own, they ride on Walk and CrouchWalk, so Idle <-> Walk changes cost no traffic.
+20 states in three groups. **Wire** is the name the client sends to the server. Idle and CrouchIdle are never sent on their own, they ride on Walk and CrouchWalk, so Idle <-> Walk changes cost no traffic.
 
 | State | Group | Wire | Timed | Notes |
 |---|---|---|---|---|
@@ -54,7 +54,6 @@ Fixed decisions the rest of the document builds on.
 | Slide | Grounded | Slide | until speed drops | Run plus crouch key only. Ends in CrouchWalk if there is no headroom to stand |
 | CrouchIdle | Grounded | CrouchWalk | no | |
 | CrouchWalk | Grounded | CrouchWalk | no | |
-| VaultLow | Grounded | VaultLow | `VAULT_LOW_TIME` | Run into a vaultable obstacle, automatic (section 6) |
 | Jump | Airborne | Jump | no | |
 | DoubleJump | Airborne | DoubleJump | no | One air jump per airtime |
 | SlideJump | Airborne | SlideJump | no | Jump out of Slide. Keeps and adds momentum, then a short launch (section 4) |
@@ -65,7 +64,7 @@ Fixed decisions the rest of the document builds on.
 | WallLeap | Wall | WallLeap | `LEAP_TIME` | Jump pressed in a wall run. Arcs away from the wall, then Fall |
 | WallCling | Wall | WallCling | `CLING_MAX_TIME` | Jump pressed in the air at a wall, facing it |
 | WallBoost | Wall | WallBoost | `BOOST_TIME` | Jump pressed in a cling. Vertical launch up the wall, then Fall |
-| VaultMid | Wall | VaultMid | `VAULT_MID_TIME` | Space or F near a ledge, from the air or a wall (section 6) |
+| Mantle | Wall | Mantle | `MANTLE_TIME` | Space or F near a ledge, from the air or a wall (section 6) |
 
 **Timed states.** The server stores `endsAt` and resolves an expired state to its `after` state the next time it is read. No timer fires.
 
@@ -78,31 +77,30 @@ Fixed decisions the rest of the document builds on.
 Rows use wire names, so Idle shares the Walk row and CrouchIdle shares the CrouchWalk row. "Land" means any grounded state, and the server only accepts it if its own ground probe hits (section 7.2). "Dash" means any of DashF, DashB, DashL and DashR.
 
 ```
-Walk        -> Run, CrouchWalk, Jump, Fall, VaultLow, Dash
-Run         -> Walk, Slide, Jump, Fall, VaultLow, Dash
+Walk        -> Run, CrouchWalk, Jump, Fall, Dash
+Run         -> Walk, Slide, Jump, Fall, Dash
 Slide       -> Run, Walk, CrouchWalk, SlideJump, Fall
 CrouchWalk  -> Walk, Run, Jump, Fall
-VaultLow    -> Run, Walk, Fall
-VaultMid    -> Walk, Fall
-Jump        -> DoubleJump, Fall, WallRun, WallCling, VaultMid, Land, Dash
-DoubleJump  -> Fall, WallRun, WallCling, VaultMid, Land, Dash
-SlideJump   -> LedgeLeap, DoubleJump, Fall, WallRun, WallCling, VaultMid, Land, Dash
-LedgeLeap   -> DoubleJump, Fall, WallRun, WallCling, VaultMid, Land, Dash
-Fall        -> DoubleJump, WallRun, WallCling, VaultMid, Land, Dash
+Mantle      -> Walk, Fall
+Jump        -> DoubleJump, Fall, WallRun, WallCling, Mantle, Land, Dash
+DoubleJump  -> Fall, WallRun, WallCling, Mantle, Land, Dash
+SlideJump   -> LedgeLeap, DoubleJump, Fall, WallRun, WallCling, Mantle, Land, Dash
+LedgeLeap   -> DoubleJump, Fall, WallRun, WallCling, Mantle, Land, Dash
+Fall        -> DoubleJump, WallRun, WallCling, Mantle, Land, Dash
 WallRun     -> WallLeap, Fall, Land
 WallLeap    -> Fall, WallRun, WallCling, Land
-WallCling   -> WallBoost, VaultMid, Fall, Land
-WallBoost   -> VaultMid, Fall, WallRun, WallCling, Land
+WallCling   -> WallBoost, Mantle, Fall, Land
+WallBoost   -> Mantle, Fall, WallRun, WallCling, Land
 Dash        -> Walk, Run, CrouchWalk, Fall
 ```
 
 Rules on top of the table:
 
-- **Jump in the air** checks for a ledge first (VaultMid, section 6), then a wall, then the air jump. A wall probe hit starts WallRun or WallCling, whichever the facing says (section 5.1). Jump in a WallRun is WallLeap, Jump in a WallCling is WallBoost, unless a ledge is in reach.
+- **Jump in the air** checks for a ledge first (Mantle, section 6), then a wall, then the air jump. A wall probe hit starts WallRun or WallCling, whichever the facing says (section 5.1). Jump in a WallRun is WallLeap, Jump in a WallCling is WallBoost, unless a ledge is in reach.
 - **Wall states start in the air only.**
 - **No regrabbing the same wall.** After leaving a wall, `WALL_REGRAB` seconds must pass, and the server remembers `lastWallPart` and refuses that part until the player has landed. Chaining only works onto a different part. This is one check in `MovementService`, easy to change.
 - **Air jumps.** DoubleJump needs `airJumps < MAX_AIR_JUMPS`, and the counter only resets on landing. Wall states neither refund nor spend it, so an unused air jump is still there after a WallLeap or WallBoost ends in Fall.
-- **VaultMid starts from the air states, WallCling and WallBoost**, and only when the vault probe finds a ledge in reach.
+- **Mantle starts from the air states, WallCling and WallBoost**, and only when the ledge probe finds a ledge in reach.
 - **LedgeLeap starts from SlideJump only**, when the character will clear a drop of at least `LEDGE_LEAP_DROP` within `LEDGE_LEAP_WINDOW` of takeoff. The client looks ahead as far as the launch carries it in what is left of the window, so the leap starts at once and the SlideJump animation never shows. It ends when its animation does.
 - **Nothing starts during a dash.** It runs to its end first.
 - **Nothing starts while Stunned, Downed or Attacking.** The server asks `StateService` (section 7.1), not combat internals.
@@ -111,10 +109,10 @@ Rules on top of the table:
 
 Dash is four states, DashF, DashB, DashL and DashR, one per direction relative to the character. Entering one records `dodgeUntil` on the server for iframes, because the dash is the dodge.
 
-- **Allowed from:** Idle, Walk, Run, Jump, DoubleJump, SlideJump, Fall. **Not from:** crouching, Slide, the vaults and the wall states. Refused while Stunned or Downed. This is only the `to` lists in `MoveDefs`, so the client and the server agree by construction.
+- **Allowed from:** Idle, Walk, Run, Jump, DoubleJump, SlideJump, Fall. **Not from:** crouching, Slide, Mantle and the wall states. Refused while Stunned or Downed. This is only the `to` lists in `MoveDefs`, so the client and the server agree by construction.
 - **Nothing cuts a dash short.** Jumps, slides, wall grabs and other dashes wait until it ends. Then it hands over to what the character is doing: a grounded state on the ground, Fall in the air.
 - **Direction** comes from the movement keys held when Q is pressed, the first of W, A, S, D wins. No key held dashes Back.
-- **Cooldowns:** front and back share one `DASH_COOLDOWN`, left and right share another (the `shares` field in `MoveDefs`). A side dash can follow a front dash, two of the same kind can't. No charges and no stamina cost.
+- **Cooldowns:** front and back share one `DASH_COOLDOWN`, left and right share another (the `shares` field in `MoveDefs`). A side dash can follow a front dash, two of the same kind can't. In the air there is one dash until landing, so the chain only works on the ground (`hasAirDashed`, reset on landing like the air jump). A WallRun or WallBoost gives it back, a cling on its own doesn't, and a dash started on the ground doesn't count. No charges and no stamina cost.
 - **Front and side dashes:** a `LinearVelocity` burst on `HumanoidRootPart` for `DASH_TIME` at `max(DASH_SPEED, momentum)`, fading back to momentum over the last `DASH_TAIL` of it. The direction is re-read against the character's facing every step, so turning bends the path. In the air the vertical speed is held at zero for `DASH_AIR_HOLD`, then gravity takes over.
 - **Back dash:** a slow backstep at `BACK_DASH_SPEED * BACK_DASH_DRIFT` until the DashB animation reaches its `Boost` marker, then a burst at `BACK_DASH_SPEED * BACK_DASH_BOOST` for `BACK_DASH_BOOST_TIME`. Its direction is fixed when it starts. In the air it has no height hold, gravity keeps working, so the longer windup doesn't stall the character mid air. If the marker never fires it ends after `BACK_DASH_TIME`.
 - **Air dash:** a front dash started from an airborne state. It bursts like any front dash but at `AIR_DASH_SPEED` and with no `DASH_TAIL`: it lets go at full speed, like the slide jump and ledge leap launches, and the Humanoid's air control bleeds it down onto momentum plus `AIR_DASH_GAIN`, never less than `AIR_DASH_EXIT` (capped at `MOMENTUM_MAX`). So it carries the character from a standstill jump and still adds speed when already fast. Instead of holding its height it rises at `AIR_DASH_LIFT` for `DASH_AIR_HOLD`, enough to reach a platform a little above. When it ends the character keeps going the way it dashed. It is still DashF on the wire, so it shares the front and back cooldown and gives the same iframes. Back and side dashes in the air are plain dashes.
@@ -139,12 +137,11 @@ Momentum is one number: carried horizontal speed in studs per second. It lives o
 | WallLeap | Momentum becomes velocity along the wall plus `LEAP_OUT` away from the wall plus `LEAP_UP`, adds `LEAP_GAIN` |
 | WallCling | Horizontal momentum is dropped, slides down the wall at `CLING_SLIDE_SPEED` |
 | WallBoost | Vertical launch up the wall (`BOOST_UP`), no push away from it |
-| VaultLow | Momentum x `VAULT_BOOST`, capped at `MOMENTUM_MAX` |
-| VaultMid | Momentum unchanged |
+| Mantle | Momentum unchanged |
 | Dash | No change, speed returns to what it was before the dash |
 | Air dash | Adds `AIR_DASH_GAIN`, at least `AIR_DASH_EXIT`, capped at `MOMENTUM_MAX`. The burst lets go at full speed and the air bleeds it onto the new momentum, along the dash |
 | Landing | Momentum is kept if a state that carries it (Run, Slide) is entered within `LAND_GRACE`, otherwise it decays as normal |
-| Landing roll | A landing at least `ROLL_HEIGHT` below where the ground was left plays the Roll animation and carries the character forward at `max(ROLL_SPEED, momentum)` for `ROLL_TIME`, even with no keys held. Not a state. Jumping, sliding, vaulting or dashing cuts it short |
+| Landing roll | A landing at least `ROLL_HEIGHT` below where the ground was left plays the Roll animation and carries the character forward at `max(ROLL_SPEED, momentum)` for `ROLL_TIME`, even with no keys held. Not a state. Jumping, sliding or dashing cuts it short |
 | Hard cap | `MOMENTUM_MAX`, nothing exceeds it |
 
 ### How it is applied on R6
@@ -155,7 +152,7 @@ Momentum is one number: carried horizontal speed in studs per second. It lives o
 - **Dash:** the same `LinearVelocity`, a short burst in the chosen direction (section 3.1).
 - **SlideJump and LedgeLeap launches:** the same `LinearVelocity` in vector mode, so it holds against gravity, for the launch time only. One `LAUNCHES` table in `Air` holds both.
 - **Landing roll:** no mover. The Ground state calls `Humanoid:Move` along the facing and raises `WalkSpeed` to at least `ROLL_SPEED` until the roll ends.
-- **VaultLow and VaultMid:** an `AlignPosition` moves `HumanoidRootPart` along a short path built from the probe, and a `NoCollisionConstraint` between the character and the obstacle part stays for the length of the vault. Both are created per vault and destroyed when it ends.
+- **Mantle:** an `AlignPosition` moves `HumanoidRootPart` along a short path built from the probe, and a `NoCollisionConstraint` between the character and the ledge part stays for the length of the mantle. Both are created per mantle and destroyed when it ends.
 - **During wall states** `Humanoid.AutoRotate = false`. Humanoid states the game does not use are turned off with `SetStateEnabled`.
 - No `BodyVelocity` and friends (C16). Forces and movers go on `HumanoidRootPart` (C18).
 
@@ -196,55 +193,42 @@ Returns `{ kind: "Run" | "Cling", side: "Left" | "Right"?, normal: Vector3, part
 
 One ray straight down from `HumanoidRootPart`, length `GROUND_RAY`, same params. The server uses it for Jump and Land checks and the client uses it for landing.
 
-### 5.3 Vault probe
+### 5.3 Ledge probe
 
-`Probes.vault` returns a Low or a Mid hit. See section 6.
+`Probes.ledge` finds a ledge to mantle onto. See section 6.
 
 ---
 
-## 6. Vault
+## 6. Mantle
 
-Two vaults, two states.
+Mantling pulls the character up onto a ledge that is just in reach. It is one state, Mantle.
 
-| | VaultLow | VaultMid |
-|---|---|---|
-| Trigger | Automatic when moving into a vaultable obstacle | Space near a ledge in the air or on a wall. F in WallCling, WallBoost, or within `LEDGE_GRACE` of letting go of one |
-| Allowed from | Walk, Run. Not Slide, not mid air | Jump, DoubleJump, SlideJump, Fall, WallCling, WallBoost |
-| Minimum speed | none | none |
-| Momentum | x `VAULT_BOOST`, capped at `MOMENTUM_MAX` | unchanged |
-| Ends in | Run if sprint is held, otherwise Walk | Walk, standing on the ledge |
-| Animation | VaultLow | VaultMid (latch and pull up) |
-| Duration | `VAULT_LOW_TIME` | `VAULT_MID_TIME` |
+- **Trigger:** Space near a ledge in the air or on a wall. F in WallCling, WallBoost, or within `LEDGE_GRACE` of letting go of one.
+- **Allowed from:** Jump, DoubleJump, SlideJump, LedgeLeap, Fall, WallCling, WallBoost.
+- **Momentum:** unchanged.
+- **Ends in:** Walk, standing on the ledge.
+- **Animation:** Mantle (latch and pull up).
+- **Duration:** `MANTLE_TIME`, then `MANTLE_COOLDOWN` before the next one.
 
 ### Marking
 
-A part is vaultable only if it, or the model it sits in, has the tag `Vaultable`. Geometry alone is never enough.
+A part can be mantled only if it, or the model it sits in, has the tag `Mantleable`. Geometry alone is never enough.
 
-In a large RPG, "any anchored part in a height range" would vault over trim, props, fences, NPC colliders and half the map by accident, and every level change could silently add or remove vaults. A flag on the part makes a vault a level design decision. The server check is a cheap tag check, and an exploiter cannot make anything vaultable. The cost is that level builders tag each obstacle, one tag per part. The height check still runs on top, so a tagged part that is too tall or too short is ignored.
+In a large RPG, "any anchored part with a lip in reach" would mantle onto trim, props, fences, NPC colliders and half the map by accident, and every level change could silently add or remove ledges. A flag on the part makes a mantle a level design decision. The server check is a cheap tag check, and an exploiter cannot make anything mantleable. The cost is that level builders tag each ledge, one tag per part. The lip window still applies on top, so a tagged part whose top is out of reach is ignored.
 
-### VaultLow probe
+### Ledge probe
 
-Runs on the client every step while moving in Walk or Run (one ray first, the rest only when it hits), and once per intent on the server.
+`Probes.ledge` runs when Space is pressed in the air or on a wall, and when F is pressed where it is allowed, and once per intent on the server. It is meant for being just under a ledge and pulling up onto it.
 
-1. A forward ray from knee height, length `VAULT_REACH`, hits an anchored `Vaultable` part with a near vertical normal, and the character is moving toward it.
-2. The top is found with a ray straight down from just past the hit point, starting well above the obstacle. Its height above the floor is between `VAULT_LOW_MIN_H` and `VAULT_LOW_MAX_H` and its normal points up.
-3. Headroom: a forward ray at character height above the top surface is clear.
-
-Returns `{ kind = "Low", part, topY, normal }?`.
-
-### VaultMid probe
-
-Runs when Space is pressed in the air or on a wall, and when F is pressed where it is allowed. It is meant for being just under a ledge and pulling up onto it.
-
-1. A forward ray from `LEDGE_LOW` below the root (just above the feet) hits an anchored `Vaultable` wall within `LEDGE_REACH`.
+1. A forward ray from `LEDGE_LOW` below the root (just above the feet) hits an anchored `Mantleable` wall within `LEDGE_REACH`.
 2. A ray straight down, `LEDGE_DEPTH` past the wall face and starting `LEDGE_HIGH` above the root, finds the top of that part with an upward normal. So any lip between the feet and well over the head counts.
-3. Headroom above the top is checked like VaultLow.
+3. Headroom: a forward ray at character height above the top is clear.
 
-Returns `{ kind = "Mid", part, topY, normal }?`.
+Returns `{ part, point, normal }?`.
 
-### How a vault moves
+### How a mantle moves
 
-The client moves `HumanoidRootPart` along a short path built from the probe (start, over or up, end) and ignores collision with the obstacle part for the length of the vault (section 4). The server does not follow the path. It checks that the probe is valid at the start and that `VAULT_COOLDOWN` has passed, and the normal speed check covers the rest.
+The client moves `HumanoidRootPart` along a short curve built from the probe (start, the lip where the animation plants its hands, standing on top) and ignores collision with the ledge part for the length of the mantle (section 4). The server does not follow the path. It checks that the probe is valid at the start and that `MANTLE_COOLDOWN` has passed, and the normal speed check covers the rest.
 
 ---
 
@@ -255,7 +239,7 @@ The client moves `HumanoidRootPart` along a short path built from the probe (sta
 Shared with combat. One table per character, created on spawn and removed on `PlayerRemoving` and character removal.
 
 ```
-move:    state, since, endsAt, airJumps, lastWallPart, groundedAt, cooldownUntil: { [MoveState]: number }
+move:    state, since, endsAt, airJumps, hasAirDashed, lastWallPart, groundedAt, cooldownUntil: { [MoveState]: number }
 dash:    dodgeUntil                                         (movement writes, combat reads)
 speed:   windowCap, lastGoodCFrame, bucket, exemptUntil, lastPos, sampledAt, measured
 combat:  stunnedUntil, attackUntil, parryUntil, downed      (combat fills these)
@@ -285,11 +269,10 @@ Handled in the order from C5:
    - Grounded to Airborne (Jump): the ground probe hits, or the player was grounded within `COYOTE` seconds.
    - Airborne or Wall to Grounded (Land): the ground probe must hit. This stops a client from sending Walk in the air to reset air jumps or lower its speed cap tracking.
    - Wall states: the shared wall probe returns a hit of the right kind on an anchored part, not tagged `NoWall`, and not `lastWallPart` unless the player has landed since.
-   - VaultLow: the recorded state is Walk or Run, the ground probe hits, and the vault probe returns a Low hit. The moving toward it check is skipped on the server.
-   - VaultMid: the vault probe returns a Mid hit.
+   - Mantle: the ledge probe returns a hit.
    - LedgeLeap: within `LEDGE_LEAP_WINDOW` of the SlideJump, and a ray straight down finds no floor within `LEDGE_LEAP_DROP` under the feet. The server's copy is still behind the edge, so it also casts from a point ahead along the direction of travel, as far as the lag slack plus the launch distance over the window.
-   - Dash: no probe, only the transition table and the cooldown.
-   - **Lag slack.** The server's copy of a character trails the client by roughly speed times ping, so probes get `PROBE_SLACK` plus the measured flat speed times `PROBE_LAG`. Landing and VaultMid also add the vertical speed times `PROBE_LAG`, capped at `BOOST_UP`, because after a fast fall or a boost the server's copy is still well above or below the client.
+   - Dash: no probe, only the transition table, the cooldown, and one dash per airtime.
+   - **Lag slack.** The server's copy of a character trails the client by roughly speed times ping, so probes get `PROBE_SLACK` plus the measured flat speed times `PROBE_LAG`. Landing and Mantle also add the vertical speed times `PROBE_LAG`, capped at `BOOST_UP`, because after a fast fall or a boost the server's copy is still well above or below the client.
 6. **Apply.** Write `state`, `since`, `endsAt` for timed states, `cooldownUntil` (and the state it `shares` a cooldown with), `dodgeUntil` for a dash, the stamina cost, and reset or spend `airJumps`.
 7. **Replicate.** Set the `MoveState` attribute on the character so other clients can read it for effects, and nothing else. A denied intent fires `MoveDeny` to that player only.
 
@@ -341,7 +324,7 @@ One entry point, `init.client.luau`, requires and starts the controllers.
 
 | Module | Job |
 |---|---|
-| `InputController` | The only module that reads input. Turns keys from `Config.KEYS` into named actions (`Sprint`, `Crouch`, `Jump`, `Dash`, `VaultMid`) and hands them to the movement controller. Sprint is a double tap of W, held for as long as W stays down. W is read without being sunk so it still walks, and Shift is left free for shift lock. Crouch is a toggle, and jumping or starting a sprint turns it off. Movement direction comes from `Humanoid.MoveDirection` for now. If Server Authority is ever adopted, this is the module that moves to the Input Action System |
+| `InputController` | The only module that reads input. Turns keys from `Config.KEYS` into named actions (`Sprint`, `Crouch`, `Jump`, `Dash`, `Mantle`) and hands them to the movement controller. Sprint is a double tap of W, held for as long as W stays down. W is read without being sunk so it still walks, and Shift is left free for shift lock. Crouch is a toggle, and jumping or starting a sprint turns it off. Movement direction comes from `Humanoid.MoveDirection` for now. If Server Authority is ever adopted, this is the module that moves to the Input Action System |
 | `MovementController` | The state machine, momentum and movers. One update per step (`RunService.PreSimulation`) and one `request(to)` function. `request` checks `MoveDefs[current].to[to]` and the local cooldown, switches at once, and sends `Move` when the wire state changed. On `MoveDeny` it snaps back, unless it has already left the denied state. It also starts the landing roll |
 | `AnimationController` | Loads every R6 track once per character through the `Animator` the server made (`WaitForChild("Animator")`) and keeps them. Plays by state. A running jump keeps the run animation going at `RUN_JUMP_ANIM_SPEED` instead of cutting to the jump. A dash animation takes over from the state animation and plays to its end. The jump, leap and boost one shots also play to their end when the state moves on to Fall, then hand over to the fall loop. The landing roll plays on top of the walk states. `play` returns the length of the animation it started, so LedgeLeap can last exactly as long as whichever of its animations plays, and those alternate |
 | `EffectController` | Later. Dust, wall sparks and FOV scaling with momentum, driven by the `MoveState` attribute |
@@ -354,7 +337,7 @@ One per family, each with `enter(ctx)`, `update(ctx, dt) -> MoveState?` and `exi
 |---|---|
 | `Ground` | Idle, Walk, Run, CrouchIdle, CrouchWalk |
 | `Slide` | Slide |
-| `Vault` | VaultLow, VaultMid |
+| `Mantle` | Mantle |
 | `Air` | Jump, DoubleJump, SlideJump, LedgeLeap, Fall |
 | `WallRun` | WallRun, WallLeap |
 | `WallCling` | WallCling, WallBoost |
@@ -374,7 +357,7 @@ The table passed to states holds the character, humanoid, root, animator, probe 
 | Crouch | Left Control, toggle | `KEYS.CROUCH` |
 | Jump | Space | `KEYS.JUMP` |
 | Dash | Q | `KEYS.DASH` |
-| Vault (VaultMid) | Space or F near a ledge | `KEYS.JUMP`, `KEYS.VAULT_MID` |
+| Mantle | Space or F near a ledge | `KEYS.JUMP`, `KEYS.MANTLE` |
 
 ### Animations
 
@@ -384,7 +367,7 @@ All tracks are R6 animations, with their asset ids in `Anims.luau`, which assert
 |---|---|
 | Idle | Idle, Fall |
 | Movement | Walk, Run |
-| Action | Slide, VaultLow, VaultMid, the dashes, Roll, LedgeLeap, wall states, jumps |
+| Action | Slide, Mantle, the dashes, Roll, LedgeLeap, wall states, jumps |
 
 R6 animations cannot be mirrored at runtime, so WallRun and WallLeap need a Left and a Right animation and Dash needs four (F, B, L, R). The air dash plays its own `AirDash` animation in place of DashF. The DashB animation needs a keyframe marker named `Boost` where the burst starts. LedgeLeap has two animations, `LedgeLeap` and `LedgeLeap2`, listed in `LEAPS` in `AnimationController`, and `LEDGE_LEAP_TIME` must be at least as long as the longest. An empty `Animate` LocalScript in `StarterCharacterScripts` replaces the default one so it does not fight these tracks.
 
@@ -395,11 +378,11 @@ R6 animations cannot be mirrored at runtime, so WallRun and WallLeap need a Left
 ```
 src/
   shared/
-    Types.luau          MoveState, MoveGroup, AnimName, MoveDef, WallHit, VaultHit
+    Types.luau          MoveState, MoveGroup, AnimName, MoveDef, WallHit, LedgeHit
     Config.luau         every constant in section 11
     Remotes.luau
-    MoveDefs.luau       the 21 states: group, wire, cap, cost, cooldown, shares, duration, after, to
-    Probes.luau         wall, ground, vault
+    MoveDefs.luau       the 20 states: group, wire, cap, cost, cooldown, shares, duration, after, to
+    Probes.luau         wall, ground, ledge
     Anims.luau          animation asset ids by name
   server/
     init.server.luau
@@ -415,7 +398,7 @@ src/
       AnimationController.luau
       EffectController.luau  later
       Movement/Context.luau  the per character context table and mover helpers
-      Movement/States/       Ground, Slide, Vault, Air, WallRun, WallCling
+      Movement/States/       Ground, Slide, Mantle, Air, WallRun, WallCling
       Movement/Dash.luau     the four dash states
       Movement/Lean.luau     body lean
   character/
@@ -473,7 +456,7 @@ Every tunable lives in `src/shared/Config.luau`, which is the source of truth. T
 | Jumps and landing | Jump and double jump power, `COYOTE`, and the landing roll (`ROLL_HEIGHT`, `ROLL_SPEED`, `ROLL_TIME`) |
 | Slide | Entry speed, boost, decay, end speed, cooldown, jump gain, turn rate, the slide jump launch (`SLIDE_JUMP_*`) and the ledge leap (`LEDGE_LEAP_*`) |
 | Wall states | Wall probe reach and spans, `FACING_SPLIT`, regrab time, wall run, cling, leap and boost numbers |
-| Vaults | VaultLow reach, heights and timing keyed to its animation, VaultMid lip window (`LEDGE_LOW`, `LEDGE_HIGH`, `LEDGE_DEPTH`), `LEDGE_GRACE` |
+| Mantle | Lip window (`LEDGE_LOW`, `LEDGE_HIGH`, `LEDGE_DEPTH`), the path keyed to its animation, `LEDGE_GRACE`, `MANTLE_TIME`, `MANTLE_COOLDOWN` |
 | Dash | `DASH_SPEED`, `DASH_TIME`, `DASH_TAIL`, `DASH_AIR_HOLD`, `DASH_COOLDOWN`, `DODGE_TIME`, the back dash (`BACK_DASH_*`) and the air dash (`AIR_DASH_*`) |
 | Feel and animation | Body lean, `ANIM_FADE`, `RUN_JUMP_ANIM_SPEED`, the hurt speed penalty |
 | Input | `KEYS`, `DOUBLE_TAP` |
@@ -526,14 +509,15 @@ Whether to build on Server Authority now that Roblox calls it released is a deci
 - Slide trigger
 - Dash as the dodge, with iframes
 - Dash Back with no key held, usable in the air
-- Dash is a state, so nothing stacks on it. Refused from crouching, Slide, the vaults and the wall states
+- Dash is a state, so nothing stacks on it. Refused from crouching, Slide, Mantle and the wall states
 - Front and back dashes share a cooldown, side dashes share another, so the two kinds chain
 - The back dash is a backstep and a burst keyed to its animation's `Boost` marker
 - A front dash in the air is the air dash: a full dash burst that hands a carry speed to momentum and keeps going where it went. It is not a separate state or key
 - No stamina costs
 - Loose speed caps
 - Double tap W to sprint (Shift stays shift lock), Control to toggle crouch, Q to dash
-- Both vaults. VaultMid is one latch and pull up animation, started by Space or F when just under a ledge, with no boost
+- Mantle (once called VaultMid) is one latch and pull up animation, started by Space or F when just under a ledge, with no boost
+- No low vault. It only added a speed boost the other moves already give
 - A landing roll after a drop of `ROLL_HEIGHT` or more, visual plus a short forward push, not a state
 - A running jump keeps the run animation, slowed, instead of the jump animation
 - A slide jump launches, and one that clears a drop just after takeoff becomes a ledge leap, a stronger launch that adds momentum and lasts as long as its animation
@@ -551,14 +535,14 @@ Whether to build on Server Authority now that Roblox calls it released is a deci
 All six layers are built. The list is kept as the order things were built and checked in. Each layer had to pass the C10 checklist before the next one started.
 
 1. **Types, Config, MoveDefs, Probes.**
-   Done when the transition table has no state without a row, the wall probe classifies a head on wall and a side on wall correctly in a test place, and the vault probes accept a tagged obstacle and ignore an untagged one.
+   Done when the transition table has no state without a row, the wall probe classifies a head on wall and a side on wall correctly in a test place, and the ledge probe accepts a tagged ledge and ignores an untagged one.
 2. **StateService, RateLimit, spawn setup** (collision groups, exemptions).
    Done when state tables are created and removed with no leftover entries after 50 respawns.
 3. **Server movement checks:** move and dash intent handling, and the speed check.
    Done when garbage args (nil, NaN, huge numbers, wrong types, unknown states, unknown dash directions) from the command bar do nothing, and a scripted speed hack is rubber banded while normal play and a dash are not.
 4. **Remotes and their wiring.**
    Done when spamming `Move` and `Dash` at a high rate is dropped without errors.
-5. **Client:** `InputController`, `MovementController`, then states in this order: Ground, Air, Slide, WallRun, WallCling, VaultLow, VaultMid, then Dash. When Slide is in, test in Studio whether the slide animation lets the character pass under a low gap. If it does not, add a smaller collision hull before moving on.
+5. **Client:** `InputController`, `MovementController`, then states in this order: Ground, Air, Slide, WallRun, WallCling, Mantle, then Dash. When Slide is in, test in Studio whether the slide animation lets the character pass under a low gap. If it does not, add a smaller collision hull before moving on.
    Done when every transition in section 3 can be played, a denied intent snaps back, and there is no memory growth after repeating the main actions 50 times.
 6. **AnimationController, then EffectController.**
 
