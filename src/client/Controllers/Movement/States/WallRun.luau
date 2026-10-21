@@ -13,6 +13,8 @@ local Air = require(script.Parent.Air)
 type Ctx = Context.Ctx
 
 local FALL = Vector3.new(0, -Config.WALLRUN_FALL_SPEED, 0)
+-- staying on the wall only needs the wall, not the speed it took to start the run
+local ANY_SPEED = math.huge
 
 local WallRun = {}
 
@@ -47,7 +49,7 @@ function WallRun.update(c: Ctx, dt: number): Types.MoveState?
 	if c.state == "WallRun" then
 		if InputController.take("Jump") then
 			return "WallLeap"
-		elseif elapsed >= Config.WALLRUN_MAX_TIME or not Probes.wall(c.root, math.huge) then
+		elseif elapsed >= Config.WALLRUN_MAX_TIME or not Probes.wall(c.root, ANY_SPEED) then
 			return "Fall"
 		end
 		c.momentum = math.max(0, c.momentum - Config.WALLRUN_DECAY * dt)

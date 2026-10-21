@@ -14,6 +14,8 @@ local Mantle = require(script.Parent.Mantle)
 type Ctx = Context.Ctx
 
 local SLIDE_DOWN = Vector3.new(0, -Config.CLING_SLIDE_SPEED, 0)
+-- staying on the wall only needs the wall, a cling has no speed condition anyway
+local ANY_SPEED = math.huge
 
 local WallCling = {}
 
@@ -47,7 +49,7 @@ function WallCling.update(c: Ctx): Types.MoveState?
 	if c.state == "WallCling" then
 		if isJump then
 			return "WallBoost"
-		elseif elapsed >= Config.CLING_MAX_TIME or not Probes.wall(c.root, math.huge) then
+		elseif elapsed >= Config.CLING_MAX_TIME or not Probes.wall(c.root, ANY_SPEED) then
 			return "Fall"
 		end
 		return nil
