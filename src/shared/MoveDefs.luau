@@ -20,7 +20,7 @@ type Row = {
 local LAND: { Types.MoveState } = { "Walk", "Run", "Slide", "CrouchWalk" }
 local DASH: { Types.MoveState } = { "DashF", "DashB", "DashL", "DashR" }
 
-local WALK_TO: { Target } = { "Run", "CrouchWalk", "Jump", "Fall", "VaultLow", "Dash" }
+local WALK_TO: { Target } = { "Run", "CrouchWalk", "Jump", "Fall", "Dash" }
 local CROUCH_TO: { Target } = { "Walk", "Run", "Jump", "Fall" }
 -- nothing cuts a dash short, it hands over to whatever the character is doing once it's over
 local DASH_TO: { Target } = { "Walk", "Run", "CrouchWalk", "Fall" }
@@ -50,7 +50,7 @@ end
 local rows: { [Types.MoveState]: Row } = {
 	Idle = { group = "Grounded", wire = "Walk", to = WALK_TO },
 	Walk = { group = "Grounded", to = WALK_TO },
-	Run = { group = "Grounded", to = { "Walk", "Slide", "Jump", "Fall", "VaultLow", "Dash" } },
+	Run = { group = "Grounded", to = { "Walk", "Slide", "Jump", "Fall", "Dash" } },
 	Slide = {
 		group = "Grounded",
 		cooldown = Config.SLIDE_COOLDOWN,
@@ -58,27 +58,20 @@ local rows: { [Types.MoveState]: Row } = {
 	},
 	CrouchIdle = { group = "Grounded", wire = "CrouchWalk", to = CROUCH_TO },
 	CrouchWalk = { group = "Grounded", to = CROUCH_TO },
-	VaultLow = {
-		group = "Grounded",
-		duration = Config.VAULT_LOW_TIME,
-		after = "Walk",
-		cooldown = Config.VAULT_COOLDOWN,
-		to = { "Run", "Walk", "Fall" },
-	},
 
-	Jump = { group = "Airborne", to = { "DoubleJump", "Fall", "WallRun", "WallCling", "VaultMid", "Land", "Dash" } },
-	DoubleJump = { group = "Airborne", to = { "Fall", "WallRun", "WallCling", "VaultMid", "Land", "Dash" } },
+	Jump = { group = "Airborne", to = { "DoubleJump", "Fall", "WallRun", "WallCling", "Mantle", "Land", "Dash" } },
+	DoubleJump = { group = "Airborne", to = { "Fall", "WallRun", "WallCling", "Mantle", "Land", "Dash" } },
 	SlideJump = {
 		group = "Airborne",
-		to = { "LedgeLeap", "DoubleJump", "Fall", "WallRun", "WallCling", "VaultMid", "Land", "Dash" },
+		to = { "LedgeLeap", "DoubleJump", "Fall", "WallRun", "WallCling", "Mantle", "Land", "Dash" },
 	},
 	LedgeLeap = {
 		group = "Airborne",
 		duration = Config.LEDGE_LEAP_TIME,
 		after = "Fall",
-		to = { "DoubleJump", "Fall", "WallRun", "WallCling", "VaultMid", "Land", "Dash" },
+		to = { "DoubleJump", "Fall", "WallRun", "WallCling", "Mantle", "Land", "Dash" },
 	},
-	Fall = { group = "Airborne", to = { "DoubleJump", "WallRun", "WallCling", "VaultMid", "Land", "Dash" } },
+	Fall = { group = "Airborne", to = { "DoubleJump", "WallRun", "WallCling", "Mantle", "Land", "Dash" } },
 
 	-- front and back share a cooldown and so do the sides, so a side dash chains into a front one
 	DashF = dash(Config.DASH_TIME, "DashB"),
@@ -103,19 +96,19 @@ local rows: { [Types.MoveState]: Row } = {
 		group = "Wall",
 		duration = Config.CLING_MAX_TIME,
 		after = "Fall",
-		to = { "WallBoost", "VaultMid", "Fall", "Land" },
+		to = { "WallBoost", "Mantle", "Fall", "Land" },
 	},
 	WallBoost = {
 		group = "Wall",
 		duration = Config.BOOST_TIME,
 		after = "Fall",
-		to = { "VaultMid", "Fall", "WallRun", "WallCling", "Land" },
+		to = { "Mantle", "Fall", "WallRun", "WallCling", "Land" },
 	},
-	VaultMid = {
+	Mantle = {
 		group = "Wall",
-		duration = Config.VAULT_MID_TIME,
+		duration = Config.MANTLE_TIME,
 		after = "Walk",
-		cooldown = Config.VAULT_COOLDOWN,
+		cooldown = Config.MANTLE_COOLDOWN,
 		to = { "Walk", "Fall" },
 	},
 }

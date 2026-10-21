@@ -42,20 +42,6 @@ function Ground.pick(c: Ctx): Types.MoveState
 	return if isMoving then "Walk" else "Idle"
 end
 
-local function findVault(c: Ctx): boolean
-	local dir = c.hum.MoveDirection
-	if dir.Magnitude == 0 or not Context.isReady(c, "VaultLow") then
-		return false
-	end
-
-	local hit = Probes.vaultLow(c.root)
-	if not hit or dir:Dot(-hit.normal) < Config.VAULT_TOWARD then
-		return false
-	end
-	c.vault = hit
-	return true
-end
-
 function Ground.update(c: Ctx, dt: number): Types.MoveState?
 	local state: Types.MoveState = c.state
 	local hum = c.hum
@@ -89,8 +75,6 @@ function Ground.update(c: Ctx, dt: number): Types.MoveState?
 	elseif state == "Run" and InputController.isDown("Crouch") then
 		-- Run can't go straight to CrouchWalk, so a slide on cooldown stands up for one step first
 		return if Ground.canSlide(c) then "Slide" else "Walk"
-	elseif (state == "Walk" or state == "Run") and findVault(c) then
-		return "VaultLow"
 	end
 
 	local nextState: Types.MoveState = Ground.pick(c)

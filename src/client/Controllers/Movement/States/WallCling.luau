@@ -9,7 +9,7 @@ local Types = require(ReplicatedStorage.Shared.Types)
 local Context = require(script.Parent.Parent.Context)
 local InputController = require(script.Parent.Parent.Parent.InputController)
 local Air = require(script.Parent.Air)
-local Vault = require(script.Parent.Vault)
+local Mantle = require(script.Parent.Mantle)
 
 type Ctx = Context.Ctx
 
@@ -39,8 +39,8 @@ function WallCling.update(c: Ctx): Types.MoveState?
 	end
 	-- space pulls up onto a ledge in reach before it boosts or grabs another wall
 	local isJump = InputController.take("Jump")
-	if (isJump or InputController.take("VaultMid")) and Vault.findLedge(c) then
-		return "VaultMid"
+	if (isJump or InputController.take("Mantle")) and Mantle.findLedge(c) then
+		return "Mantle"
 	end
 	local elapsed = os.clock() - c.since
 

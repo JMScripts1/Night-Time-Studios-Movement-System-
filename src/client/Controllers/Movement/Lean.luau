@@ -13,7 +13,7 @@ type Ctx = Context.Ctx
 local WALK = math.rad(Config.LEAN_WALK)
 local SPRINT = math.rad(Config.LEAN_SPRINT)
 
-local OFF: { [Types.MoveState]: true } = { Slide = true, VaultLow = true }
+local OFF: { [Types.MoveState]: true } = { Slide = true }
 
 local Lean = {}
 

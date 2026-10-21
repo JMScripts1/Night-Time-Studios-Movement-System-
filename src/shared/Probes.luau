@@ -15,12 +15,12 @@ local function isWallFace(hit: RaycastResult): boolean
 	return math.abs(hit.Normal.Y) <= Config.WALL_MAX_NORMAL_Y and hit.Instance.Anchored
 end
 
-local function isVaultable(part: BasePart): boolean
-	if part:HasTag("Vaultable") then
+local function isMantleable(part: BasePart): boolean
+	if part:HasTag("Mantleable") then
 		return true
 	end
 	local model = part:FindFirstAncestorOfClass("Model")
-	return model ~= nil and model:HasTag("Vaultable")
+	return model ~= nil and model:HasTag("Mantleable")
 end
 
 -- a ray that starts inside a part never hits it, so a top above fromY is rejected for free
@@ -96,38 +96,14 @@ function Probes.ceiling(root: BasePart): RaycastResult?
 	return workspace:Raycast(root.Position, Vector3.new(0, Config.STAND_RAY, 0), params)
 end
 
--- the client also checks it's moving toward the hit, the server skips that
-function Probes.vaultLow(root: BasePart, reach: number?): Types.VaultHit?
-	local cf = root.CFrame
-	local length = reach or Config.VAULT_REACH
-	local hit = workspace:Raycast(cf.Position + Vector3.new(0, Config.KNEE_Y, 0), cf.LookVector * length, params)
-	if not hit or not isWallFace(hit) or not isVaultable(hit.Instance) then
-		return nil
-	end
-
-	local floorY = cf.Position.Y - Config.ROOT_HEIGHT
-	local top = findTop(
-		hit.Instance,
-		hit.Position - hit.Normal * Config.VAULT_INSET,
-		floorY + Config.VAULT_LOW_MAX_H,
-		Config.VAULT_LOW_MAX_H - Config.VAULT_LOW_MIN_H
-	)
-	-- from the top, not the root, so it covers the vault path wherever the probe started
-	if not top or not hasHeadroom(top, cf.LookVector, top.Y, Config.VAULT_LOW_OVER) then
-		return nil
-	end
-
-	return { kind = "Low", part = hit.Instance, topY = top.Y, point = top, normal = hit.Normal }
-end
-
 -- the wall ray goes along the bottom of the lip window, so any lip above it is found
-function Probes.vaultMid(root: BasePart, slack: number?): Types.VaultHit?
+function Probes.ledge(root: BasePart, slack: number?): Types.LedgeHit?
 	local cf = root.CFrame
 	local give = slack or 0
 	local low = cf.Position + Vector3.new(0, Config.LEDGE_LOW - give, 0)
 
 	local hit = workspace:Raycast(low, cf.LookVector * (Config.LEDGE_REACH + give), params)
-	if not hit or not isWallFace(hit) or not isVaultable(hit.Instance) then
+	if not hit or not isWallFace(hit) or not isMantleable(hit.Instance) then
 		return nil
 	end
 
@@ -137,7 +113,7 @@ function Probes.vaultMid(root: BasePart, slack: number?): Types.VaultHit?
 		return nil
 	end
 
-	return { kind = "Mid", part = hit.Instance, topY = top.Y, point = top, normal = hit.Normal }
+	return { part = hit.Instance, point = top, normal = hit.Normal }
 end
 
 return Probes

@@ -31,7 +31,7 @@ return table.freeze({
 	SLIDE_BOOST = 1.1,
 	SLIDE_DECAY = 12,
 	SLIDE_END_SPEED = 10,
-	SLIDE_COOLDOWN = 0.6,
+	SLIDE_COOLDOWN = 1.2,
 	SLIDE_JUMP_GAIN = 4,
 	-- the slide jump launches at momentum times this plus SLIDE_JUMP_LIFT up, held for SLIDE_JUMP_LAUNCH_TIME
 	SLIDE_JUMP_LAUNCH = 1.5,
@@ -68,32 +68,16 @@ return table.freeze({
 	BOOST_TIME = 0.6,
 	BOOST_IN = 10,
 
-	VAULT_REACH = 2.5,
-	VAULT_INSET = 0.5,
-	VAULT_LOW_MIN_H = 2,
-	VAULT_LOW_MAX_H = 4.5,
-	VAULT_LOW_TIME = 0.5,
-	VAULT_LOW_MIN_TIME = 0.2,
-	VAULT_BOOST = 1.1,
-	VAULT_COOLDOWN = 0.4,
-	VAULT_TOWARD = 0.5,
-	VAULT_CLEAR = 0.5,
-	VAULT_LOW_OVER = 3,
-	-- keys of the 30 frame VaultLow animation, as a fraction of the vault
-	VAULT_LOW_PLANT_AT = 8 / 30,
-	VAULT_LOW_CLEAR_AT = 20 / 30,
-	-- where the root sits when the hands land, past the near edge and above the top
-	VAULT_PLANT_IN = 0.5,
-	VAULT_PLANT_UP = 2,
+	MANTLE_COOLDOWN = 0.4,
 	LEDGE_REACH = 2.5,
-	-- VaultMid lip window from the root centre, just above the feet to 5 over the head
+	-- Mantle lip window from the root centre, just above the feet to 5 over the head
 	LEDGE_LOW = -2.5,
 	LEDGE_HIGH = 6.5,
 	LEDGE_DEPTH = 1.5,
-	-- seconds after letting go of a cling or boost that VaultMid still works from Fall
+	-- seconds after letting go of a cling or boost that Mantle still works from Fall
 	LEDGE_GRACE = 0.3,
-	-- the VaultMid animation's length, it plants its hands at the halfway point
-	VAULT_MID_TIME = 0.4,
+	-- the Mantle animation's length, it plants its hands at the halfway point
+	MANTLE_TIME = 0.4,
 	-- where the root sits when the hands land, above the lip and out from the wall face
 	LEDGE_PLANT_UP = 0.5,
 	LEDGE_PLANT_OUT = 0.5,
@@ -133,7 +117,7 @@ return table.freeze({
 		CROUCH = Enum.KeyCode.LeftControl,
 		JUMP = Enum.KeyCode.Space,
 		DASH = Enum.KeyCode.Q,
-		VAULT_MID = Enum.KeyCode.F,
+		MANTLE = Enum.KeyCode.F,
 	}),
 	-- most seconds between the two taps of the sprint key
 	DOUBLE_TAP = 0.3,

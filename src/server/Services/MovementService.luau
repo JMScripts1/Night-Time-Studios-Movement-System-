@@ -111,10 +111,8 @@ local function canEnter(
 			return true, hit.part
 		end
 		return false
-	elseif to == "VaultLow" then
-		return onGround(root) and Probes.vaultLow(root, reach(st, Config.VAULT_REACH)) ~= nil
-	elseif to == "VaultMid" then
-		return Probes.vaultMid(root, reach(st, verticalLag(root))) ~= nil
+	elseif to == "Mantle" then
+		return Probes.ledge(root, reach(st, verticalLag(root))) ~= nil
 	elseif to == "LedgeLeap" then
 		-- the client looks as far ahead as its launch carries it in the window, and the server's copy trails behind that
 		local v = root.AssemblyLinearVelocity

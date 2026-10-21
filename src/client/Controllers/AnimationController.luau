@@ -168,10 +168,9 @@ function AnimationController.play(c: Ctx): number
 		start(c.state)
 	end
 
-	-- a vault's path is keyed to its animation, so the animation is stretched to the vault's length
-	local run = c.vaulting
-	if run and current and current.Length > 0 then
-		current:AdjustSpeed(current.Length / run.time)
+	-- the mantle's path is keyed to its animation, so the animation is stretched to the mantle's length
+	if c.mantling and current and current.Length > 0 then
+		current:AdjustSpeed(current.Length / Config.MANTLE_TIME)
 	end
 
 	if os.clock() >= c.rollUntil then

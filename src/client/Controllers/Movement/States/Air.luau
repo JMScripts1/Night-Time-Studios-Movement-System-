@@ -10,7 +10,7 @@ local Types = require(ReplicatedStorage.Shared.Types)
 local Context = require(script.Parent.Parent.Context)
 local InputController = require(script.Parent.Parent.Parent.InputController)
 local Ground = require(script.Parent.Ground)
-local Vault = require(script.Parent.Vault)
+local Mantle = require(script.Parent.Mantle)
 
 type Ctx = Context.Ctx
 
@@ -120,14 +120,14 @@ function Air.update(c: Ctx, dt: number): Types.MoveState?
 
 	-- a late press just after letting go of a cling or boost still catches the ledge
 	local isLetGo = c.state == "Fall" and CLINGS[c.prev] and elapsed < Config.LEDGE_GRACE
-	if isLetGo and InputController.take("VaultMid") and Vault.findLedge(c) then
-		return "VaultMid"
+	if isLetGo and InputController.take("Mantle") and Mantle.findLedge(c) then
+		return "Mantle"
 	end
 
 	-- a ledge in reach wins over a wall, and a wall over the air jump
 	if InputController.take("Jump") then
-		if Vault.findLedge(c) then
-			return "VaultMid"
+		if Mantle.findLedge(c) then
+			return "Mantle"
 		end
 		local wall: Types.MoveState? = Air.wall(c)
 		if wall then

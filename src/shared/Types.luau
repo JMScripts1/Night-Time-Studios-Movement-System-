@@ -9,7 +9,6 @@ export type MoveState =
 	| "Slide"
 	| "CrouchIdle"
 	| "CrouchWalk"
-	| "VaultLow"
 	| "Jump"
 	| "DoubleJump"
 	| "SlideJump"
@@ -19,7 +18,7 @@ export type MoveState =
 	| "WallLeap"
 	| "WallCling"
 	| "WallBoost"
-	| "VaultMid"
+	| "Mantle"
 	| "DashF"
 	| "DashB"
 	| "DashL"
@@ -59,10 +58,8 @@ export type WallHit = {
 	part: BasePart,
 }
 
-export type VaultHit = {
-	kind: "Low" | "Mid",
+export type LedgeHit = {
 	part: BasePart,
-	topY: number,
 	point: Vector3,
 	normal: Vector3,
 }

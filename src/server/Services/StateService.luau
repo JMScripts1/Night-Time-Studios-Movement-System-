@@ -103,7 +103,7 @@ function StateService.current(char: Model): Types.MoveState
 
 	-- every timed state ends in an untimed one, so one step is enough
 	if endsAt and after and workspace:GetServerTimeNow() >= endsAt then
-		-- VaultMid runs out standing on the ledge, which is a landing nobody sends
+		-- Mantle runs out standing on the ledge, which is a landing nobody sends
 		if MoveDefs[after].group == "Grounded" and MoveDefs[move.state].group ~= "Grounded" then
 			StateService.land(char, endsAt)
 		end

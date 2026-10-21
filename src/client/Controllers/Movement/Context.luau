@@ -30,12 +30,10 @@ export type DashRun = {
 	boostedAt: number?,
 }
 
-export type VaultRun = {
+export type MantleRun = {
 	trove: Trove,
 	mover: AlignPosition,
-	facing: Vector3,
-	time: number,
-	-- 0 to 1 through the vault, to where the root should be
+	-- 0 to 1 through the mantle, to where the root should be
 	at: (number) -> Vector3,
 }
 
@@ -67,8 +65,8 @@ export type Ctx = {
 	leanSet: CFrame,
 
 	wall: Types.WallHit?,
-	vault: Types.VaultHit?,
-	vaulting: VaultRun?,
+	ledge: Types.LedgeHit?,
+	mantling: MantleRun?,
 	dash: DashRun?,
 }
 
