@@ -116,8 +116,9 @@ Dash is four states, DashF, DashB, DashL and DashR, one per direction relative t
 - **Direction** comes from the movement keys held when Q is pressed, the first of W, A, S, D wins. No key held dashes Back.
 - **Cooldowns:** front and back share one `DASH_COOLDOWN`, left and right share another (the `shares` field in `MoveDefs`). A side dash can follow a front dash, two of the same kind can't. No charges and no stamina cost.
 - **Front and side dashes:** a `LinearVelocity` burst on `HumanoidRootPart` for `DASH_TIME` at `max(DASH_SPEED, momentum)`, fading back to momentum over the last `DASH_TAIL` of it. The direction is re-read against the character's facing every step, so turning bends the path. In the air the vertical speed is held at zero for `DASH_AIR_HOLD`, then gravity takes over.
-- **Back dash:** a slow backstep at `BACK_DASH_SPEED * BACK_DASH_DRIFT` until the DashB animation reaches its `Boost` marker, then a burst at `BACK_DASH_SPEED * BACK_DASH_BOOST` for `BACK_DASH_BOOST_TIME`. Its direction is fixed when it starts, and in the air it holds its height the whole way. If the marker never fires it ends after `BACK_DASH_TIME`.
-- **Momentum** is unchanged, and a dash in the air keeps the heading the jump had.
+- **Back dash:** a slow backstep at `BACK_DASH_SPEED * BACK_DASH_DRIFT` until the DashB animation reaches its `Boost` marker, then a burst at `BACK_DASH_SPEED * BACK_DASH_BOOST` for `BACK_DASH_BOOST_TIME`. Its direction is fixed when it starts. In the air it has no height hold, gravity keeps working, so the longer windup doesn't stall the character mid air. If the marker never fires it ends after `BACK_DASH_TIME`.
+- **Air dash:** a front dash started from an airborne state. It bursts like any front dash but at `AIR_DASH_SPEED` and with no `DASH_TAIL`: it lets go at full speed, like the slide jump and ledge leap launches, and the Humanoid's air control bleeds it down onto momentum plus `AIR_DASH_GAIN`, never less than `AIR_DASH_EXIT` (capped at `MOMENTUM_MAX`). So it carries the character from a standstill jump and still adds speed when already fast. Instead of holding its height it rises at `AIR_DASH_LIFT` for `DASH_AIR_HOLD`, enough to reach a platform a little above. When it ends the character keeps going the way it dashed. It is still DashF on the wire, so it shares the front and back cooldown and gives the same iframes. Back and side dashes in the air are plain dashes.
+- **Momentum** is unchanged by every other dash, and back and side dashes in the air keep the heading the jump had.
 - **Airborne group,** so a dash off the ground is a takeoff and its end is a landing, both checked like any other.
 
 ---
@@ -141,6 +142,7 @@ Momentum is one number: carried horizontal speed in studs per second. It lives o
 | VaultLow | Momentum x `VAULT_BOOST`, capped at `MOMENTUM_MAX` |
 | VaultMid | Momentum unchanged |
 | Dash | No change, speed returns to what it was before the dash |
+| Air dash | Adds `AIR_DASH_GAIN`, at least `AIR_DASH_EXIT`, capped at `MOMENTUM_MAX`. The burst lets go at full speed and the air bleeds it onto the new momentum, along the dash |
 | Landing | Momentum is kept if a state that carries it (Run, Slide) is entered within `LAND_GRACE`, otherwise it decays as normal |
 | Landing roll | A landing at least `ROLL_HEIGHT` below where the ground was left plays the Roll animation and carries the character forward at `max(ROLL_SPEED, momentum)` for `ROLL_TIME`, even with no keys held. Not a state. Jumping, sliding, vaulting or dashing cuts it short |
 | Hard cap | `MOMENTUM_MAX`, nothing exceeds it |
@@ -303,7 +305,7 @@ Runs every `SPEED_SAMPLE_INTERVAL` seconds per character, never per frame (C20).
 
 - **Distance** is horizontal only (X and Z), between the current and the last sampled `HumanoidRootPart` position, divided by the real time between samples.
 - **Allowed speed** is `windowCap * SPEED_TOLERANCE`, plus `SPEED_LAG_STUDS` spread over the interval. `windowCap` is the largest `cap` of any state recorded during the interval, so a fast state that ended mid interval still counts. It resets to the current state's cap after each sample.
-- **Caps** come from `MoveDefs`. Walk is `WALK_SPEED`, CrouchWalk is `CROUCH_SPEED`, WallLeap is `MOMENTUM_MAX + LEAP_GAIN + LEAP_OUT`, SlideJump and LedgeLeap are `MOMENTUM_MAX` times their launch, the dash states are the fastest any dash can go (the back dash burst, `DASH_SPEED` or `MOMENTUM_MAX`), and every other state is `MOMENTUM_MAX`. After a fast state ends the cap falls at `MOMENTUM_GROUND_DECAY` per second instead of dropping at once, because the client bleeds its speed off the same way. This is loose on purpose for v1. The cap is one function in `MoveDefs`, so a momentum estimate built from recorded states can replace it later without touching anything else.
+- **Caps** come from `MoveDefs`. Walk is `WALK_SPEED`, CrouchWalk is `CROUCH_SPEED`, WallLeap is `MOMENTUM_MAX + LEAP_GAIN + LEAP_OUT`, SlideJump and LedgeLeap are `MOMENTUM_MAX` times their launch, the dash states are the fastest any dash can go (the back dash burst, `DASH_SPEED`, `AIR_DASH_SPEED` or `MOMENTUM_MAX`), and every other state is `MOMENTUM_MAX`. After a fast state ends the cap falls at `MOMENTUM_GROUND_DECAY` per second instead of dropping at once, because the client bleeds its speed off the same way. This is loose on purpose for v1. The cap is one function in `MoveDefs`, so a momentum estimate built from recorded states can replace it later without touching anything else.
 - **Over the limit** adds the excess ratio to a bucket that drains at `SPEED_BUCKET_DRAIN` per second. A lag spike is forgiven, sustained speed is not. At `SPEED_BUCKET_MAX` the character is put back at `lastGoodCFrame` with `PivotTo`, quietly. `lastGoodCFrame` only updates on a passing sample.
 - **Skipped** while `exemptUntil` is in the future. Spawn and respawn exempt `SPAWN_EXEMPT` seconds.
 - **Not checked in v1:** vertical speed. A fly check (airborne, not in a jump or wall state, not falling) is a later detection add.
@@ -341,7 +343,7 @@ One entry point, `init.client.luau`, requires and starts the controllers.
 |---|---|
 | `InputController` | The only module that reads input. Turns keys from `Config.KEYS` into named actions (`Sprint`, `Crouch`, `Jump`, `Dash`, `VaultMid`) and hands them to the movement controller. Sprint is a double tap of W, held for as long as W stays down. W is read without being sunk so it still walks, and Shift is left free for shift lock. Crouch is a toggle, and jumping or starting a sprint turns it off. Movement direction comes from `Humanoid.MoveDirection` for now. If Server Authority is ever adopted, this is the module that moves to the Input Action System |
 | `MovementController` | The state machine, momentum and movers. One update per step (`RunService.PreSimulation`) and one `request(to)` function. `request` checks `MoveDefs[current].to[to]` and the local cooldown, switches at once, and sends `Move` when the wire state changed. On `MoveDeny` it snaps back, unless it has already left the denied state. It also starts the landing roll |
-| `AnimationController` | Loads every R6 track once per character through the `Animator` the server made (`WaitForChild("Animator")`) and keeps them. Plays by state. A running jump keeps the run animation going at `RUN_JUMP_ANIM_SPEED` instead of cutting to the jump. A dash animation takes over from the state animation and plays to its end. The landing roll plays on top of the walk states. `play` returns the length of the animation it started, so LedgeLeap can last exactly as long as whichever of its animations plays, and those alternate |
+| `AnimationController` | Loads every R6 track once per character through the `Animator` the server made (`WaitForChild("Animator")`) and keeps them. Plays by state. A running jump keeps the run animation going at `RUN_JUMP_ANIM_SPEED` instead of cutting to the jump. A dash animation takes over from the state animation and plays to its end. The jump, leap and boost one shots also play to their end when the state moves on to Fall, then hand over to the fall loop. The landing roll plays on top of the walk states. `play` returns the length of the animation it started, so LedgeLeap can last exactly as long as whichever of its animations plays, and those alternate |
 | `EffectController` | Later. Dust, wall sparks and FOV scaling with momentum, driven by the `MoveState` attribute |
 
 ### State modules
@@ -384,7 +386,7 @@ All tracks are R6 animations, with their asset ids in `Anims.luau`, which assert
 | Movement | Walk, Run |
 | Action | Slide, VaultLow, VaultMid, the dashes, Roll, LedgeLeap, wall states, jumps |
 
-R6 animations cannot be mirrored at runtime, so WallRun and WallLeap need a Left and a Right animation and Dash needs four (F, B, L, R). The DashB animation needs a keyframe marker named `Boost` where the burst starts. LedgeLeap has two animations, `LedgeLeap` and `LedgeLeap2`, listed in `LEAPS` in `AnimationController`, and `LEDGE_LEAP_TIME` must be at least as long as the longest. An empty `Animate` LocalScript in `StarterCharacterScripts` replaces the default one so it does not fight these tracks.
+R6 animations cannot be mirrored at runtime, so WallRun and WallLeap need a Left and a Right animation and Dash needs four (F, B, L, R). The air dash plays its own `AirDash` animation in place of DashF. The DashB animation needs a keyframe marker named `Boost` where the burst starts. LedgeLeap has two animations, `LedgeLeap` and `LedgeLeap2`, listed in `LEAPS` in `AnimationController`, and `LEDGE_LEAP_TIME` must be at least as long as the longest. An empty `Animate` LocalScript in `StarterCharacterScripts` replaces the default one so it does not fight these tracks.
 
 ---
 
@@ -472,7 +474,7 @@ Every tunable lives in `src/shared/Config.luau`, which is the source of truth. T
 | Slide | Entry speed, boost, decay, end speed, cooldown, jump gain, turn rate, the slide jump launch (`SLIDE_JUMP_*`) and the ledge leap (`LEDGE_LEAP_*`) |
 | Wall states | Wall probe reach and spans, `FACING_SPLIT`, regrab time, wall run, cling, leap and boost numbers |
 | Vaults | VaultLow reach, heights and timing keyed to its animation, VaultMid lip window (`LEDGE_LOW`, `LEDGE_HIGH`, `LEDGE_DEPTH`), `LEDGE_GRACE` |
-| Dash | `DASH_SPEED`, `DASH_TIME`, `DASH_TAIL`, `DASH_AIR_HOLD`, `DASH_COOLDOWN`, `DODGE_TIME`, and the back dash (`BACK_DASH_*`) |
+| Dash | `DASH_SPEED`, `DASH_TIME`, `DASH_TAIL`, `DASH_AIR_HOLD`, `DASH_COOLDOWN`, `DODGE_TIME`, the back dash (`BACK_DASH_*`) and the air dash (`AIR_DASH_*`) |
 | Feel and animation | Body lean, `ANIM_FADE`, `RUN_JUMP_ANIM_SPEED`, the hurt speed penalty |
 | Input | `KEYS`, `DOUBLE_TAP` |
 | R6 offsets | `ROOT_HEIGHT`, `KNEE_Y`, `GROUND_RAY`, `STAND_RAY` |
@@ -527,6 +529,7 @@ Whether to build on Server Authority now that Roblox calls it released is a deci
 - Dash is a state, so nothing stacks on it. Refused from crouching, Slide, the vaults and the wall states
 - Front and back dashes share a cooldown, side dashes share another, so the two kinds chain
 - The back dash is a backstep and a burst keyed to its animation's `Boost` marker
+- A front dash in the air is the air dash: a full dash burst that hands a carry speed to momentum and keeps going where it went. It is not a separate state or key
 - No stamina costs
 - Loose speed caps
 - Double tap W to sprint (Shift stays shift lock), Control to toggle crouch, Q to dash
