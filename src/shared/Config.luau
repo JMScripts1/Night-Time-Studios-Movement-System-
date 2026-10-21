@@ -3,7 +3,7 @@
 -- MIT licensed, see LICENSE. Feel free to remove this header.
 
 return table.freeze({
-	DEBUG = true,
+	DEBUG = false,
 
 	WALK_SPEED = 14,
 	CROUCH_SPEED = 7,
