@@ -141,6 +141,10 @@ end
 -- a dash takes over from the state track instead of blending with it, so it plays to the end even once the dash is over
 local function dash(name: Types.AnimName)
 	local track = tracks[name]
+	-- a side dash chains into a front one before its animation is over, so the old one is cut instead of blending in
+	if dashing and dashing ~= track then
+		dashing:Stop(Config.ANIM_FADE)
+	end
 	dashing = track
 	if current then
 		current:Stop(Config.ANIM_FADE)
