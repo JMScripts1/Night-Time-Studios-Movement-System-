@@ -104,6 +104,10 @@ return table.freeze({
 	LEAN_WALK = 9,
 	LEAN_SPRINT = 11,
 	LEAN_TIME = 0.08,
+	-- the camera widens from FOV_BASE at walking speed to FOV_MAX at MOMENTUM_MAX and past, easing over FOV_TIME
+	FOV_BASE = 70,
+	FOV_MAX = 85,
+	FOV_TIME = 0.15,
 	ANIM_FADE = 0.1,
 	-- run animation speed through a running jump, back to 1 on landing
 	RUN_JUMP_ANIM_SPEED = 0.3,

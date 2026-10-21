@@ -328,7 +328,7 @@ One entry point, `init.client.luau`, requires and starts the controllers.
 | `InputController` | The only module that reads input. Turns keys from `Config.KEYS` into named actions (`Sprint`, `Crouch`, `Jump`, `Dash`, `Mantle`) and hands them to the movement controller. Sprint is a double tap of W, held for as long as W stays down. W is read without being sunk so it still walks, and Shift is left free for shift lock. Crouch is a toggle, and jumping or starting a sprint turns it off. Movement direction comes from `Humanoid.MoveDirection` for now. If Server Authority is ever adopted, this is the module that moves to the Input Action System |
 | `MovementController` | The state machine, momentum and movers. One update per step (`RunService.PreSimulation`) and one `request(to)` function. `request` checks `MoveDefs[current].to[to]` and the local cooldown, switches at once, and sends `Move` when the wire state changed. On `MoveDeny` it snaps back, unless it has already left the denied state. It also starts the landing roll |
 | `AnimationController` | Loads every R6 track once per character through the `Animator` the server made (`WaitForChild("Animator")`) and keeps them. Plays by state. A running jump keeps the run animation going at `RUN_JUMP_ANIM_SPEED` instead of cutting to the jump. A dash animation takes over from the state animation and plays to its end. The jump, leap and boost one shots also play to their end when the state moves on to Fall, then hand over to the fall loop. The landing roll plays on top of the walk states. `play` returns the length of the animation it started, so LedgeLeap can last exactly as long as whichever of its animations plays, and those alternate |
-| `EffectController` | Later. Dust, wall sparks and FOV scaling with momentum, driven by the `MoveState` attribute |
+| `EffectController` | Camera FOV and sounds. FOV eases from `FOV_BASE` at walking speed to `FOV_MAX` at `MOMENTUM_MAX`, read from the local character's flat speed so dashes and launches widen it too. Sounds come from the slots in `Sounds.luau`: the local character plays them straight from the state machine, other characters from the `MoveState` attribute, as 3D sounds on their root. Dust and wall sparks are later |
 
 ### State modules
 
@@ -372,6 +372,12 @@ All tracks are R6 animations, with their asset ids in `Anims.luau`, which assert
 
 R6 animations cannot be mirrored at runtime, so WallRun and WallLeap need a Left and a Right animation and Dash needs four (F, B, L, R). The air dash plays its own `AirDash` animation in place of DashF. The DashB animation needs a keyframe marker named `Boost` where the burst starts. LedgeLeap has two animations, `LedgeLeap` and `LedgeLeap2`, listed in `LEAPS` in `AnimationController`, and `LEDGE_LEAP_TIME` must be at least as long as the longest. An empty `Animate` LocalScript in `StarterCharacterScripts` replaces the default one so it does not fight these tracks.
 
+### Sounds
+
+Asset ids live in `Sounds.luau`, one slot each: Jump, DoubleJump, SlideJump, LedgeLeap, Dash (all four dashes), Land, Slide and WallRun (both looped for as long as the state lasts), WallLeap, WallCling, WallBoost and Mantle. Every slot starts with an empty id, which plays nothing, so a sound goes in by pasting its id. A landing is entering a grounded state from the air or a wall, except out of a dash (a ground dash is Airborne on paper) or a mantle.
+
+Roblox's default footstep, jump and landing sounds are turned off by an empty `RbxCharacterSounds` LocalScript in StarterPlayerScripts, the same trick as `Animate`. Footsteps will be custom and are not built yet.
+
 ---
 
 ## 10. Layout
@@ -385,6 +391,7 @@ src/
     MoveDefs.luau       the 20 states: group, wire, cap, cost, cooldown, shares, duration, after, to
     Probes.luau         wall, ground, ledge
     Anims.luau          animation asset ids by name
+    Sounds.luau         sound asset ids by slot
   server/
     init.server.luau
     RateLimit.luau
@@ -397,17 +404,19 @@ src/
       InputController.luau
       MovementController.luau
       AnimationController.luau
-      EffectController.luau  later
+      EffectController.luau  FOV and sounds
       Movement/Context.luau  the per character context table and mover helpers
       Movement/States/       Ground, Slide, Mantle, Air, WallRun, WallCling
       Movement/Dash.luau     the four dash states
       Movement/Lean.luau     body lean
   character/
     Animate.client.luau      empty, replaces the default Animate
+  player/
+    RbxCharacterSounds.client.luau  empty, replaces the default character sounds
 Packages/                    third party, synced to ReplicatedStorage.Packages
 ```
 
-`src/character` and the repo root `Packages/` folder follow C2.
+`src/character` and the repo root `Packages/` folder follow C2. `src/player` holds the one other empty replacement script, for the same reason.
 
 ### Rojo project
 
@@ -425,7 +434,8 @@ Packages/                    third party, synced to ReplicatedStorage.Packages
 		},
 		"StarterPlayer": {
 			"StarterPlayerScripts": {
-				"Client": { "$path": "src/client" }
+				"Client": { "$path": "src/client" },
+				"RbxCharacterSounds": { "$path": "src/player/RbxCharacterSounds.client.luau" }
 			},
 			"StarterCharacterScripts": {
 				"$path": "src/character"
@@ -459,7 +469,7 @@ Every tunable lives in `src/shared/Config.luau`, which is the source of truth. T
 | Wall states | Wall probe reach and spans, `FACING_SPLIT`, regrab time, wall run, cling, leap and boost numbers |
 | Mantle | Lip window (`LEDGE_LOW`, `LEDGE_HIGH`, `LEDGE_DEPTH`), the path keyed to its animation, `LEDGE_GRACE`, `MANTLE_TIME`, `MANTLE_COOLDOWN` |
 | Dash | `DASH_SPEED`, `DASH_TIME`, `DASH_TAIL`, `DASH_AIR_HOLD`, `DASH_COOLDOWN`, `DODGE_TIME`, the back dash (`BACK_DASH_*`) and the air dash (`AIR_DASH_*`) |
-| Feel and animation | Body lean, `ANIM_FADE`, `RUN_JUMP_ANIM_SPEED`, the hurt speed penalty |
+| Feel and animation | Body lean, camera FOV (`FOV_BASE`, `FOV_MAX`, `FOV_TIME`), `ANIM_FADE`, `RUN_JUMP_ANIM_SPEED`, the hurt speed penalty |
 | Input | `KEYS`, `DOUBLE_TAP` |
 | R6 offsets | `ROOT_HEIGHT`, `KNEE_Y`, `GROUND_RAY`, `STAND_RAY` |
 | Server checks | Move rate limit, speed check sampling, tolerance and bucket, `SPAWN_EXEMPT`, and the lag slack (`COOLDOWN_TOLERANCE`, `LAND_SLACK`, `PROBE_SLACK`, `PROBE_LAG`) |
@@ -528,6 +538,7 @@ Whether to build on Server Authority now that Roblox calls it released is a deci
 
 1. Fall damage or a hard landing stun belongs to combat. Out of scope here.
 2. A Q press during a dash is dropped. Buffering it for the moment the dash ends would make chaining easier.
+3. Footsteps are custom and not built yet: timed by a `Footstep` marker in the walk and run animations, or by distance travelled.
 
 ---
 

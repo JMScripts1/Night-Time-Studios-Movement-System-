@@ -10,6 +10,7 @@ local MoveDefs = require(ReplicatedStorage.Shared.MoveDefs)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local Types = require(ReplicatedStorage.Shared.Types)
 local AnimationController = require(script.Parent.AnimationController)
+local EffectController = require(script.Parent.EffectController)
 local InputController = require(script.Parent.InputController)
 local Context = require(script.Parent.Movement.Context)
 local Dash = require(script.Parent.Movement.Dash)
@@ -134,6 +135,7 @@ local function switch(c: Ctx, to: Types.MoveState)
 		enter(c)
 	end
 	c.animLength = AnimationController.play(c)
+	EffectController.play(c)
 	send(to)
 end
 
@@ -192,6 +194,7 @@ local function onCharacterAdded(char: Model)
 	local c = Context.new(char)
 	AnimationController.load(c)
 	AnimationController.play(c)
+	EffectController.load(c)
 	ctx = c
 	-- the server starts every character in Walk
 	lastSent = "Walk"
