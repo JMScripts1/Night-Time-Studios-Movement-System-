@@ -14,6 +14,8 @@ type Ctx = Context.Ctx
 
 local BOOST_MARKER = "Boost"
 local BACK_DASH: Types.AnimName = "DashB"
+local RUN: Types.AnimName = "Run"
+local ROLL: Types.AnimName = "Roll"
 -- the leap alternates between these, and lasts as long as whichever one plays
 local LEAPS: { Types.AnimName } = { "LedgeLeap", "LedgeLeap2" }
 
@@ -68,7 +70,7 @@ local function start(name: Types.AnimName)
 		return
 	end
 	-- a running jump keeps the run going slowed down instead of cutting to the jump, landing in Run speeds it back up
-	if current and current == tracks.Run and (name == "Jump" or name == "Run") then
+	if current and current == tracks[RUN] and (name == "Jump" or name == "Run") then
 		current:AdjustSpeed(if name == "Jump" then Config.RUN_JUMP_ANIM_SPEED else 1)
 		return
 	end
@@ -180,7 +182,7 @@ function AnimationController.play(c: Ctx): number
 end
 
 function AnimationController.roll()
-	local track = tracks.Roll
+	local track = tracks[ROLL]
 	rolling = track
 	track:Play(Config.ANIM_FADE)
 	if track.Length > 0 then
