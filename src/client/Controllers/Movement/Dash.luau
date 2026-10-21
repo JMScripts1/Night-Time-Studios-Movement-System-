@@ -33,7 +33,7 @@ function Dash.boost(c: Ctx)
 	end
 end
 
--- a slow backstep, then a burst at the marker. in the air it holds its height the whole way
+-- a slow backstep, then a burst at the marker. no height hold, through the windup it reads as a stall
 local function updateBack(c: Ctx, run: Context.DashRun, back: Vector3): boolean
 	local now = os.clock()
 	local boostedAt = run.boostedAt
@@ -45,11 +45,7 @@ local function updateBack(c: Ctx, run: Context.DashRun, back: Vector3): boolean
 	end
 
 	local speed = Config.BACK_DASH_SPEED * (if boostedAt then Config.BACK_DASH_BOOST else Config.BACK_DASH_DRIFT)
-	if run.isAir then
-		Context.drive(c, back * speed)
-	else
-		Context.glide(c, back * speed)
-	end
+	Context.glide(c, back * speed)
 	return false
 end
 
