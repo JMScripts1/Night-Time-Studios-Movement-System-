@@ -50,9 +50,22 @@ for state: Types.MoveState, def in MoveDefs do
 	end
 end
 
+local function isThenFall(track: AnimationTrack): boolean
+	for name in THEN_FALL do
+		if tracks[name] == track then
+			return true
+		end
+	end
+	return false
+end
+
 -- while a dash plays the state track is only remembered, it starts when the dash ends
 local function start(name: Types.AnimName)
 	local track = tracks[name]
+	-- the leap and boost can outlast their state, and they hand over to the fall loop themselves when they end
+	if name == "Fall" and current and current.IsPlaying and isThenFall(current) then
+		return
+	end
 	-- a running jump keeps the run going slowed down instead of cutting to the jump, landing in Run speeds it back up
 	if current and current == tracks.Run and (name == "Jump" or name == "Run") then
 		current:AdjustSpeed(if name == "Jump" then Config.RUN_JUMP_ANIM_SPEED else 1)
