@@ -48,6 +48,8 @@ export type MoveDef = {
 	-- the other state on the same cooldown
 	shares: MoveState?,
 	isDash: boolean,
+	-- holds onto a wall part, so the same part can't be grabbed again straight after
+	isAttached: boolean,
 	to: { [MoveState]: true },
 }
 

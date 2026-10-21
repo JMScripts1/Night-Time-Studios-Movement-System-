@@ -14,6 +14,7 @@ type Row = {
 	cooldown: number?,
 	shares: Types.MoveState?,
 	isDash: true?,
+	isAttached: true?,
 	to: { Target },
 }
 
@@ -84,6 +85,7 @@ local rows: { [Types.MoveState]: Row } = {
 		group = "Wall",
 		duration = Config.WALLRUN_MAX_TIME,
 		after = "Fall",
+		isAttached = true,
 		to = { "WallLeap", "Fall", "Land" },
 	},
 	WallLeap = {
@@ -96,6 +98,7 @@ local rows: { [Types.MoveState]: Row } = {
 		group = "Wall",
 		duration = Config.CLING_MAX_TIME,
 		after = "Fall",
+		isAttached = true,
 		to = { "WallBoost", "Mantle", "Fall", "Land" },
 	},
 	WallBoost = {
@@ -172,6 +175,7 @@ for state: Types.MoveState, row in rows do
 		after = row.after,
 		shares = row.shares,
 		isDash = row.isDash == true,
+		isAttached = row.isAttached == true,
 		to = to,
 	}
 	MoveDefs[state] = def

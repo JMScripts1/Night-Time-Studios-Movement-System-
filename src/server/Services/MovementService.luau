@@ -26,8 +26,6 @@ local GROUND_REACH = Config.GROUND_RAY + Config.LAND_SLACK
 -- facing and speed are the client's call, the server only needs a real wall
 local ANY_SPEED = math.huge
 
-local ATTACHED: { Types.MoveState } = { "WallRun", "WallCling" }
-
 -- the slide jump that opens it reached the server about as late as the leap does
 local LEAP_WINDOW = Config.LEDGE_LEAP_WINDOW + Config.COOLDOWN_TOLERANCE
 
@@ -72,8 +70,10 @@ local function verticalLag(root: BasePart): number
 end
 
 local function blockRegrab(st: CharState, untilTime: number)
-	for _, state: Types.MoveState in ATTACHED do
-		st.move.cooldownUntil[state] = untilTime
+	for state: Types.MoveState, def in MoveDefs do
+		if def.isAttached then
+			st.move.cooldownUntil[state] = untilTime
+		end
 	end
 end
 
@@ -107,7 +107,7 @@ local function canEnter(
 		return move.airJumps < Config.MAX_AIR_JUMPS
 	elseif MoveDefs[to].isDash then
 		return not move.hasAirDashed
-	elseif table.find(ATTACHED, to) then
+	elseif MoveDefs[to].isAttached then
 		local hit = Probes.wall(root, ANY_SPEED, reach(st, Config.WALL_REACH))
 		if hit and hit.part ~= move.lastWallPart then
 			return true, hit.part
@@ -137,7 +137,7 @@ local function apply(
 	local move = st.move
 	local def = MoveDefs[to]
 
-	if table.find(ATTACHED, from) then
+	if MoveDefs[from].isAttached then
 		blockRegrab(st, now + Config.WALL_REGRAB)
 	end
 

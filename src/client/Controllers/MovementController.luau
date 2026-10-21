@@ -52,8 +52,6 @@ local STATES: { [Types.MoveState]: StateModule } = {
 	DashR = Dash,
 }
 
-local ATTACHED: { [Types.MoveState]: true } = { WallRun = true, WallCling = true }
-
 local player = Players.LocalPlayer
 
 local MovementController = {}
@@ -62,8 +60,10 @@ local ctx: Ctx? = nil
 local lastSent: Types.MoveState? = nil
 
 local function blockRegrab(c: Ctx, untilTime: number)
-	for state: Types.MoveState in ATTACHED do
-		c.cooldownUntil[state] = untilTime
+	for state: Types.MoveState, def in MoveDefs do
+		if def.isAttached then
+			c.cooldownUntil[state] = untilTime
+		end
 	end
 end
 
@@ -86,7 +86,7 @@ local function switch(c: Ctx, to: Types.MoveState)
 		exit(c)
 	end
 
-	if ATTACHED[from] then
+	if MoveDefs[from].isAttached then
 		blockRegrab(c, now + Config.WALL_REGRAB)
 	end
 	if def.group == "Grounded" and MoveDefs[from].group ~= "Grounded" then
@@ -104,7 +104,7 @@ local function switch(c: Ctx, to: Types.MoveState)
 		c.airJumps += 1
 	elseif def.isDash then
 		c.hasAirDashed = true
-	elseif ATTACHED[to] then
+	elseif def.isAttached then
 		c.lastWallPart = (c.wall :: Types.WallHit).part
 		blockRegrab(c, now + (def.duration or 0) + Config.WALL_REGRAB)
 	end
