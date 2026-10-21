@@ -91,6 +91,7 @@ local function switch(c: Ctx, to: Types.MoveState)
 	end
 	if def.group == "Grounded" and MoveDefs[from].group ~= "Grounded" then
 		c.airJumps = 0
+		c.hasAirDashed = false
 		c.lastWallPart = nil
 		c.landedAt = now
 		if STATES[to] == Ground and c.takeoffY - c.root.Position.Y >= Config.ROLL_HEIGHT then
@@ -101,6 +102,8 @@ local function switch(c: Ctx, to: Types.MoveState)
 		c.takeoffY = c.root.Position.Y
 	elseif to == "DoubleJump" then
 		c.airJumps += 1
+	elseif def.isDash then
+		c.hasAirDashed = true
 	elseif ATTACHED[to] then
 		c.lastWallPart = (c.wall :: Types.WallHit).part
 		blockRegrab(c, now + (def.duration or 0) + Config.WALL_REGRAB)
@@ -141,7 +144,8 @@ function MovementController.request(to: Types.MoveState): boolean
 end
 
 local function step(c: Ctx, dt: number)
-	if InputController.take("Dash") then
+	-- the split cooldowns let a side dash chain into a front one, but only on the ground. the air gets one dash
+	if InputController.take("Dash") and not c.hasAirDashed then
 		MovementController.request(InputController.dash())
 	end
 

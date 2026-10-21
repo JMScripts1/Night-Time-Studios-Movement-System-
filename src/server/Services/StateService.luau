@@ -13,6 +13,7 @@ export type CharState = {
 		since: number,
 		endsAt: number?,
 		airJumps: number,
+		hasAirDashed: boolean,
 		lastWallPart: BasePart?,
 		groundedAt: number,
 		cooldownUntil: { [Types.MoveState]: number },
@@ -55,6 +56,7 @@ function StateService.add(char: Model)
 			state = SPAWN_STATE,
 			since = now,
 			airJumps = 0,
+			hasAirDashed = false,
 			groundedAt = 0,
 			cooldownUntil = {},
 		},
@@ -92,6 +94,7 @@ end
 function StateService.land(char: Model, at: number)
 	local move = states[char].move
 	move.airJumps = 0
+	move.hasAirDashed = false
 	move.lastWallPart = nil
 	move.groundedAt = at
 end

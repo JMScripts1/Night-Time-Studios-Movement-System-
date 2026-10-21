@@ -105,6 +105,8 @@ local function canEnter(
 		return onGround(root) or now - move.groundedAt <= COYOTE_WINDOW
 	elseif to == "DoubleJump" then
 		return move.airJumps < Config.MAX_AIR_JUMPS
+	elseif MoveDefs[to].isDash then
+		return not move.hasAirDashed
 	elseif table.find(ATTACHED, to) then
 		local hit = Probes.wall(root, ANY_SPEED, reach(st, Config.WALL_REACH))
 		if hit and hit.part ~= move.lastWallPart then
@@ -143,6 +145,8 @@ local function apply(
 		StateService.land(char, now)
 	elseif to == "DoubleJump" then
 		move.airJumps += 1
+	elseif def.isDash and MoveDefs[from].group ~= "Grounded" then
+		move.hasAirDashed = true
 	elseif wall then
 		move.lastWallPart = wall
 		-- covers the state running out on its own, leaving early overwrites it above
