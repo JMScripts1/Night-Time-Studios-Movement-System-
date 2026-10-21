@@ -128,7 +128,7 @@ Momentum is one number: carried horizontal speed in studs per second. It lives o
 | Event | Effect |
 |---|---|
 | Run | Holds momentum at `RUN_SPEED` or above, builds slowly while running straight |
-| Walk, Crouch | Momentum decays to the state's speed at `MOMENTUM_GROUND_DECAY` |
+| Walk, Crouch | Momentum drops to the state's speed at once. After a landing it holds for `LAND_GRACE` first, so the landing can still go into a run or slide |
 | Slide start | Momentum x `SLIDE_BOOST`, then decays at `SLIDE_DECAY`. Ends under `SLIDE_END_SPEED` |
 | SlideJump | Keeps momentum, adds `SLIDE_JUMP_GAIN`. Launches along the heading at momentum x `SLIDE_JUMP_LAUNCH` plus `SLIDE_JUMP_LIFT` up, held for `SLIDE_JUMP_LAUNCH_TIME`, then the air takes over |
 | LedgeLeap | Adds `LEDGE_LEAP_GAIN`, capped at `MOMENTUM_MAX`. The same kind of launch with `LEDGE_LEAP_LAUNCH`, `LEDGE_LEAP_LIFT` and `LEDGE_LEAP_LAUNCH_TIME` |
@@ -288,7 +288,7 @@ Runs every `SPEED_SAMPLE_INTERVAL` seconds per character, never per frame (C20).
 
 - **Distance** is horizontal only (X and Z), between the current and the last sampled `HumanoidRootPart` position, divided by the real time between samples.
 - **Allowed speed** is `windowCap * SPEED_TOLERANCE`, plus `SPEED_LAG_STUDS` spread over the interval. `windowCap` is the largest `cap` of any state recorded during the interval, so a fast state that ended mid interval still counts. It resets to the current state's cap after each sample.
-- **Caps** come from `MoveDefs`. Walk is `WALK_SPEED`, CrouchWalk is `CROUCH_SPEED`, WallLeap is `MOMENTUM_MAX + LEAP_GAIN + LEAP_OUT`, SlideJump and LedgeLeap are `MOMENTUM_MAX` times their launch, the dash states are the fastest any dash can go (the back dash burst, `DASH_SPEED`, `AIR_DASH_SPEED` or `MOMENTUM_MAX`), and every other state is `MOMENTUM_MAX`. After a fast state ends the cap falls at `MOMENTUM_GROUND_DECAY` per second instead of dropping at once, because the client bleeds its speed off the same way. This is loose on purpose for v1. The cap is one function in `MoveDefs`, so a momentum estimate built from recorded states can replace it later without touching anything else.
+- **Caps** come from `MoveDefs`. Walk is `WALK_SPEED`, CrouchWalk is `CROUCH_SPEED`, WallLeap is `MOMENTUM_MAX + LEAP_GAIN + LEAP_OUT`, SlideJump and LedgeLeap are `MOMENTUM_MAX` times their launch, the dash states are the fastest any dash can go (the back dash burst, `DASH_SPEED`, `AIR_DASH_SPEED` or `MOMENTUM_MAX`), and every other state is `MOMENTUM_MAX`. After a fast state ends the cap falls at `MOMENTUM_GROUND_DECAY` per second instead of dropping at once, because the body takes a moment to slow down and the server sees it late. This is loose on purpose for v1. The cap is one function in `MoveDefs`, so a momentum estimate built from recorded states can replace it later without touching anything else.
 - **Over the limit** adds the excess ratio to a bucket that drains at `SPEED_BUCKET_DRAIN` per second. A lag spike is forgiven, sustained speed is not. At `SPEED_BUCKET_MAX` the character is put back at `lastGoodCFrame` with `PivotTo`, quietly. `lastGoodCFrame` only updates on a passing sample.
 - **Skipped** while `exemptUntil` is in the future. Spawn and respawn exempt `SPAWN_EXEMPT` seconds.
 - **Not checked in v1:** vertical speed. A fly check (airborne, not in a jump or wall state, not falling) is a later detection add.

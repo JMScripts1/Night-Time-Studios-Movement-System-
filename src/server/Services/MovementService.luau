@@ -239,7 +239,7 @@ local function sample(char: Model, st: CharState, now: number)
 		end
 	end
 
-	-- the client bleeds speed off at the ground decay, so the cap follows it down instead of dropping at once
+	-- the cap falls instead of dropping at once, the body takes a moment to slow down and the server sees it late
 	local state: Types.MoveState = StateService.current(char)
 	speed.windowCap = math.max(MoveDefs[state].cap, speed.windowCap - Config.MOMENTUM_GROUND_DECAY * dt)
 	char:SetAttribute("MoveState", state)

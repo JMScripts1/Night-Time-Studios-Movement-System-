@@ -52,11 +52,10 @@ function Ground.update(c: Ctx, dt: number): Types.MoveState?
 			c.momentum = math.min(Config.MOMENTUM_MAX, c.momentum + Config.RUN_BUILD * dt)
 		end
 	else
+		-- walking and crouching drop to their own speed at once, a landing holds on so it can still go into a run or slide
 		local target = SPEEDS[state]
-		if c.momentum < target then
+		if c.momentum < target or os.clock() - c.landedAt > Config.LAND_GRACE then
 			c.momentum = target
-		elseif os.clock() - c.landedAt > Config.LAND_GRACE then
-			c.momentum = math.max(target, c.momentum - Config.MOMENTUM_GROUND_DECAY * dt)
 		end
 	end
 
