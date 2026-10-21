@@ -23,7 +23,7 @@ local LAND: { Types.MoveState } = { "Walk", "Run", "Slide", "CrouchWalk" }
 local DASH: { Types.MoveState } = { "DashF", "DashB", "DashL", "DashR" }
 
 local WALK_TO: { Target } = { "Run", "CrouchWalk", "Jump", "Fall", "Dash" }
-local CROUCH_TO: { Target } = { "Walk", "Run", "Jump", "Fall" }
+local CROUCH_TO: { Target } = { "Walk", "Run", "Fall" }
 -- nothing cuts a dash short, it hands over to whatever the character is doing once it's over
 local DASH_TO: { Target } = { "Walk", "Run", "CrouchWalk", "Fall" }
 

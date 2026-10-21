@@ -80,7 +80,7 @@ Rows use wire names, so Idle shares the Walk row and CrouchIdle shares the Crouc
 Walk        -> Run, CrouchWalk, Jump, Fall, Dash
 Run         -> Walk, Slide, Jump, Fall, Dash
 Slide       -> Run, Walk, CrouchWalk, SlideJump, Fall
-CrouchWalk  -> Walk, Run, Jump, Fall
+CrouchWalk  -> Walk, Run, Fall
 Mantle      -> Walk, Fall
 Jump        -> DoubleJump, Fall, WallRun, WallCling, Mantle, Land, Dash
 DoubleJump  -> Fall, WallRun, WallCling, Mantle, Land, Dash
@@ -97,6 +97,7 @@ Dash        -> Walk, Run, CrouchWalk, Fall
 Rules on top of the table:
 
 - **Jump in the air** checks for a ledge first (Mantle, section 6), then a wall, then the air jump. A wall probe hit starts WallRun or WallCling, whichever the facing says (section 5.1). Jump in a WallRun is WallLeap, Jump in a WallCling is WallBoost, unless a ledge is in reach.
+- **Jump while crouched stands up** (Idle, or Walk if moving) instead of jumping, unless there is no headroom to stand.
 - **Wall states start in the air only.**
 - **No regrabbing the same wall.** After leaving a wall, `WALL_REGRAB` seconds must pass, and the server remembers `lastWallPart` and refuses that part until the player has landed. Chaining only works onto a different part. This is one check in `MovementService`, easy to change.
 - **Air jumps.** DoubleJump needs `airJumps < MAX_AIR_JUMPS`, and the counter only resets on landing. Wall states neither refund nor spend it, so an unused air jump is still there after a WallLeap or WallBoost ends in Fall.

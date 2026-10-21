@@ -67,9 +67,11 @@ function Ground.update(c: Ctx, dt: number): Types.MoveState?
 		hum.WalkSpeed = math.max(hum.WalkSpeed, Config.ROLL_SPEED)
 	end
 
+	local isCrouched = state == "CrouchIdle" or state == "CrouchWalk"
 	if not Ground.isGrounded(c) then
 		return "Fall"
-	elseif InputController.take("Jump") then
+	elseif InputController.take("Jump") and not isCrouched then
+		-- from a crouch the press only stands up, it already turned crouch off and the pick below does the rest
 		return "Jump"
 	elseif state == "Run" and InputController.isDown("Crouch") then
 		-- Run can't go straight to CrouchWalk, so a slide on cooldown stands up for one step first
