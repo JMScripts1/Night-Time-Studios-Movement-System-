@@ -25,8 +25,13 @@ local CROUCH_TO: { Target } = { "Walk", "Run", "Jump", "Fall" }
 -- nothing cuts a dash short, it hands over to whatever the character is doing once it's over
 local DASH_TO: { Target } = { "Walk", "Run", "CrouchWalk", "Fall" }
 
--- the back dash's burst can outrun the other dashes, and no dash runs slower than momentum
-local DASH_CAP = math.max(Config.DASH_SPEED, Config.BACK_DASH_SPEED * Config.BACK_DASH_BOOST, Config.MOMENTUM_MAX)
+-- the fastest any dash bursts, and no dash runs slower than momentum
+local DASH_CAP = math.max(
+	Config.DASH_SPEED,
+	Config.AIR_DASH_SPEED,
+	Config.BACK_DASH_SPEED * Config.BACK_DASH_BOOST,
+	Config.MOMENTUM_MAX
+)
 
 -- airborne so a dash off the ground is a takeoff and the end of one is a landing
 local function dash(duration: number, shares: Types.MoveState): Row

@@ -23,6 +23,8 @@ local UNUSED_STATES = {
 
 export type DashRun = {
 	isAir: boolean,
+	-- a forward dash in the air, it builds momentum and carries on where it went
+	isAirDash: boolean,
 	-- the back dash keeps the direction it started in, and boostedAt is set by its animation's Boost marker
 	back: Vector3?,
 	boostedAt: number?,

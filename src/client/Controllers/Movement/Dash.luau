@@ -59,22 +59,28 @@ local function updateBurst(c: Ctx, run: Context.DashRun): boolean
 		return true
 	end
 
-	-- never slower than the momentum it started from, and the tail lands back on it, so a dash adds no speed
-	local fade = math.max(0, elapsed - HOLD) / (Config.DASH_TIME - HOLD)
-	local peak = math.max(Config.DASH_SPEED, c.momentum)
+	-- the tail brakes back onto momentum. the air dash has none, it lets go at full speed and the air bleeds it off
+	local fade = if run.isAirDash then 0 else math.max(0, elapsed - HOLD) / (Config.DASH_TIME - HOLD)
+	local peak = math.max(if run.isAirDash then Config.AIR_DASH_SPEED else Config.DASH_SPEED, c.momentum)
 	local speed = peak + (c.momentum - peak) * fade
 	Context.glide(c, direction(c) * speed)
 
 	if run.isAir and elapsed < Config.DASH_AIR_HOLD then
 		local v = c.root.AssemblyLinearVelocity
-		c.root.AssemblyLinearVelocity = Vector3.new(v.X, 0, v.Z)
+		c.root.AssemblyLinearVelocity = Vector3.new(v.X, if run.isAirDash then Config.AIR_DASH_LIFT else 0, v.Z)
 	end
 	return false
 end
 
 function Dash.enter(c: Ctx)
+	local isAir = MoveDefs[c.prev].group == "Airborne"
+	local isAirDash = isAir and c.state == "DashF"
+	if isAirDash then
+		c.momentum = math.min(Config.MOMENTUM_MAX, math.max(c.momentum + Config.AIR_DASH_GAIN, Config.AIR_DASH_EXIT))
+	end
 	c.dash = {
-		isAir = MoveDefs[c.prev].group == "Airborne",
+		isAir = isAir,
+		isAirDash = isAirDash,
 		back = if c.state == "DashB" then -Context.look(c) else nil,
 	}
 end
@@ -90,8 +96,9 @@ function Dash.update(c: Ctx): Types.MoveState?
 end
 
 function Dash.exit(c: Ctx)
-	-- Air keeps the heading a dash leaves behind, an air dash leaves the one it found
-	if not (c.dash :: Context.DashRun).isAir then
+	-- Air keeps whatever heading a dash leaves. the air dash leaves its own, side and back dashes in the air the old one
+	local run = c.dash :: Context.DashRun
+	if not run.isAir or run.isAirDash then
 		c.heading = Context.travel(c)
 	end
 	c.dash = nil

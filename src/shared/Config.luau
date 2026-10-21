@@ -111,6 +111,12 @@ return table.freeze({
 	BACK_DASH_TIME = 0.5,
 	BACK_DASH_BOOST_TIME = 0.2,
 	BACK_DASH_ANIM_TIME = 1,
+	-- a forward dash in the air bursts at AIR_DASH_SPEED, then carries momentum plus AIR_DASH_GAIN, at least AIR_DASH_EXIT
+	AIR_DASH_SPEED = 70,
+	AIR_DASH_GAIN = 4,
+	AIR_DASH_EXIT = 28,
+	-- upward speed held through DASH_AIR_HOLD instead of zero, so the air dash rises a little
+	AIR_DASH_LIFT = 30,
 	LEAN_WALK = 9,
 	LEAN_SPRINT = 11,
 	LEAN_TIME = 0.08,

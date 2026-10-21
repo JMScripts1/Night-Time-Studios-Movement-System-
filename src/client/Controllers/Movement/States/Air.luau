@@ -72,7 +72,7 @@ end
 
 function Air.enter(c: Ctx)
 	local state: Types.MoveState = c.state
-	-- a dash never changes where the character was going, see Dash.exit
+	-- a dash picks the heading it leaves behind, see Dash.exit
 	if not MoveDefs[c.prev].isDash then
 		c.heading = Context.travel(c)
 	end
