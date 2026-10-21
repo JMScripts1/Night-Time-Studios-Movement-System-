@@ -11,6 +11,7 @@ local SLOTS: { [string]: true } = {
 	WallLeapRight = true,
 	Roll = true,
 	LedgeLeap2 = true,
+	AirDash = true,
 }
 for state in MoveDefs do
 	SLOTS[state] = true
@@ -39,6 +40,7 @@ local Anims: { [Types.AnimName]: string } = {
 	DashF = "rbxassetid://132385598213592",
 	DashL = "rbxassetid://90778754431207",
 	DashR = "rbxassetid://99540956567959",
+	AirDash = "rbxassetid://98118360762129",
 	Roll = "rbxassetid://120431676333500",
 	LedgeLeap = "rbxassetid://90219606237010",
 	LedgeLeap2 = "rbxassetid://120588070311007",

@@ -36,6 +36,7 @@ export type AnimName =
 	| "WallLeapRight"
 	| "Roll"
 	| "LedgeLeap2"
+	| "AirDash"
 
 export type MoveDef = {
 	group: MoveGroup,

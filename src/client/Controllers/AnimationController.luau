@@ -42,6 +42,14 @@ for name: Types.AnimName, id in Anims do
 	animations[name] = anim
 end
 
+-- the air dash is DashF in the air with its own animation
+local DASH_ANIMS: { Types.AnimName } = { "AirDash" }
+for state: Types.MoveState, def in MoveDefs do
+	if def.isDash then
+		table.insert(DASH_ANIMS, state)
+	end
+end
+
 -- while a dash plays the state track is only remembered, it starts when the dash ends
 local function start(name: Types.AnimName)
 	local track = tracks[name]
@@ -88,11 +96,8 @@ function AnimationController.load(c: Ctx)
 		end
 	end
 
-	for state: Types.MoveState, def in MoveDefs do
-		if not def.isDash then
-			continue
-		end
-		local track = tracks[state]
+	for _, name in DASH_ANIMS do
+		local track = tracks[name]
 		c.trove:Connect(track.Stopped, function()
 			if dashing ~= track then
 				return
@@ -138,7 +143,7 @@ function AnimationController.play(c: Ctx): number
 	-- a leap keeps the wall it left, so its side is the run's side
 	local isLeft = c.wall ~= nil and c.wall.side == "Left"
 	if MoveDefs[c.state].isDash then
-		dash(c.state)
+		dash(if (c.dash :: Context.DashRun).isAirDash then "AirDash" else c.state)
 	elseif c.state == "WallRun" then
 		start(if isLeft then "WallRunLeft" else "WallRunRight")
 	elseif c.state == "WallLeap" then
