@@ -152,6 +152,9 @@ local function apply(
 		-- covers the state running out on its own, leaving early overwrites it above
 		blockRegrab(st, now + (def.duration or 0) + Config.WALL_REGRAB)
 	end
+	if def.isDashReset then
+		move.hasAirDashed = false
+	end
 
 	if def.cooldown > 0 then
 		move.cooldownUntil[to] = now + def.cooldown

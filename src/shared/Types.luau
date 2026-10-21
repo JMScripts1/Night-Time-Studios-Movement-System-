@@ -50,6 +50,8 @@ export type MoveDef = {
 	isDash: boolean,
 	-- holds onto a wall part, so the same part can't be grabbed again straight after
 	isAttached: boolean,
+	-- gives the air dash back
+	isDashReset: boolean,
 	to: { [MoveState]: true },
 }
 

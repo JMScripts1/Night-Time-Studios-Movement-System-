@@ -15,6 +15,7 @@ type Row = {
 	shares: Types.MoveState?,
 	isDash: true?,
 	isAttached: true?,
+	isDashReset: true?,
 	to: { Target },
 }
 
@@ -86,6 +87,7 @@ local rows: { [Types.MoveState]: Row } = {
 		duration = Config.WALLRUN_MAX_TIME,
 		after = "Fall",
 		isAttached = true,
+		isDashReset = true,
 		to = { "WallLeap", "Fall", "Land" },
 	},
 	WallLeap = {
@@ -98,6 +100,7 @@ local rows: { [Types.MoveState]: Row } = {
 		group = "Wall",
 		duration = Config.CLING_MAX_TIME,
 		after = "Fall",
+		-- a cling on its own doesn't give the air dash back, the boost out of it does
 		isAttached = true,
 		to = { "WallBoost", "Mantle", "Fall", "Land" },
 	},
@@ -105,6 +108,7 @@ local rows: { [Types.MoveState]: Row } = {
 		group = "Wall",
 		duration = Config.BOOST_TIME,
 		after = "Fall",
+		isDashReset = true,
 		to = { "Mantle", "Fall", "WallRun", "WallCling", "Land" },
 	},
 	Mantle = {
@@ -176,6 +180,7 @@ for state: Types.MoveState, row in rows do
 		shares = row.shares,
 		isDash = row.isDash == true,
 		isAttached = row.isAttached == true,
+		isDashReset = row.isDashReset == true,
 		to = to,
 	}
 	MoveDefs[state] = def

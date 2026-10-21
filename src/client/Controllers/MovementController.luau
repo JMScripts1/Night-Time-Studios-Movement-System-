@@ -108,6 +108,9 @@ local function switch(c: Ctx, to: Types.MoveState)
 		c.lastWallPart = (c.wall :: Types.WallHit).part
 		blockRegrab(c, now + (def.duration or 0) + Config.WALL_REGRAB)
 	end
+	if def.isDashReset then
+		c.hasAirDashed = false
+	end
 	-- the roll only carries on through the walk states
 	if STATES[to] ~= Ground then
 		c.rollUntil = 0
