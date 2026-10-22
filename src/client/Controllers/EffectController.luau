@@ -111,6 +111,9 @@ function EffectController.load(c: Ctx)
 		local v = c.root.AssemblyLinearVelocity
 		local t = math.clamp((Vector3.new(v.X, 0, v.Z).Magnitude - Config.WALK_SPEED) / FOV_RANGE, 0, 1)
 		local target = Config.FOV_BASE + (Config.FOV_MAX - Config.FOV_BASE) * t
+		if c.isCharging then
+			target -= Config.DOUBLE_JUMP_FOV_PULL
+		end
 		camera.FieldOfView += (target - camera.FieldOfView) * (1 - math.exp(-dt / Config.FOV_TIME))
 	end)
 	c.trove:Add(function()

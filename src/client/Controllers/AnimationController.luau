@@ -9,11 +9,13 @@ local MoveDefs = require(ReplicatedStorage.Shared.MoveDefs)
 local Types = require(ReplicatedStorage.Shared.Types)
 local Context = require(script.Parent.Movement.Context)
 local Dash = require(script.Parent.Movement.Dash)
+local Air = require(script.Parent.Movement.States.Air)
 
 type Ctx = Context.Ctx
 
 local BOOST_MARKER = "Boost"
 local BACK_DASH: Types.AnimName = "DashB"
+local DOUBLE_JUMP: Types.AnimName = "DoubleJump"
 local RUN: Types.AnimName = "Run"
 local ROLL: Types.AnimName = "Roll"
 -- the leap alternates between these, and lasts as long as whichever one plays
@@ -125,9 +127,14 @@ function AnimationController.load(c: Ctx)
 		end)
 	end
 
-	-- the back dash's burst is keyed to its animation
+	-- the back dash's burst and the double jump's launch are keyed to their animations
 	c.trove:Connect(tracks[BACK_DASH]:GetMarkerReachedSignal(BOOST_MARKER), function()
 		Dash.boost(c)
+	end)
+	local doubleJump = tracks[DOUBLE_JUMP]
+	c.trove:Connect(doubleJump:GetMarkerReachedSignal(BOOST_MARKER), function()
+		doubleJump:AdjustSpeed(1)
+		Air.boost(c)
 	end)
 
 	c.trove:Add(function()
@@ -175,6 +182,10 @@ function AnimationController.play(c: Ctx): number
 	-- the mantle's path is keyed to its animation, so the animation is stretched to the mantle's length
 	if c.mantling and current and current.Length > 0 then
 		current:AdjustSpeed(current.Length / Config.MANTLE_TIME)
+	end
+	-- the double jump's windup is sped up, its Boost marker puts it back to normal
+	if c.state == "DoubleJump" then
+		tracks[DOUBLE_JUMP]:AdjustSpeed(Config.DOUBLE_JUMP_CHARGE_SPEED)
 	end
 
 	if os.clock() >= c.rollUntil then

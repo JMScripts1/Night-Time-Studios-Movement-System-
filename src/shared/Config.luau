@@ -19,6 +19,16 @@ return table.freeze({
 
 	JUMP_POWER = 50,
 	DOUBLE_JUMP_POWER = 80,
+	-- the double jump charges until its animation's Boost marker (frame 19 at 60 fps), and launches then if it never fires
+	DOUBLE_JUMP_CHARGE_TIME = 19 / 60,
+	-- the windup plays this many times faster, the marker puts it back to normal speed
+	DOUBLE_JUMP_CHARGE_SPEED = 2,
+	-- a small hop on the press so the windup doesn't stall, the real launch still comes at the marker
+	DOUBLE_JUMP_HOP = 20,
+	-- fastest fall through the charge, so the windup hangs instead of dropping
+	DOUBLE_JUMP_HANG = 5,
+	-- degrees the camera pulls in through the charge, it eases back out on the launch
+	DOUBLE_JUMP_FOV_PULL = 8,
 	MAX_AIR_JUMPS = 1,
 	COYOTE = 0.15,
 	-- a drop of at least this below where the ground was left lands in a roll

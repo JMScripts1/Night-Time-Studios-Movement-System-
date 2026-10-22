@@ -17,6 +17,7 @@ type Ctx = Context.Ctx
 -- still going up faster than this means the ground under us is the one we just left
 local RISING = 1
 local TURN_RATE = math.rad(Config.AIR_TURN_RATE)
+local CHARGE_TIME = Config.DOUBLE_JUMP_CHARGE_TIME / Config.DOUBLE_JUMP_CHARGE_SPEED
 
 local CLINGS: { [Types.MoveState]: true } = { WallCling = true, WallBoost = true }
 
@@ -44,6 +45,14 @@ local Air = {}
 function Air.launch(c: Ctx, power: number)
 	local v = c.root.AssemblyLinearVelocity
 	c.root.AssemblyLinearVelocity = Vector3.new(v.X, power, v.Z)
+end
+
+-- fired by the Boost marker in the DoubleJump animation, a charge that was cut short gets nothing
+function Air.boost(c: Ctx)
+	if c.isCharging then
+		c.isCharging = false
+		Air.launch(c, Config.DOUBLE_JUMP_POWER)
+	end
 end
 
 function Air.land(c: Ctx): Types.MoveState?
@@ -85,7 +94,9 @@ function Air.enter(c: Ctx)
 		c.hum:ChangeState(Enum.HumanoidStateType.Jumping)
 		Air.launch(c, Config.JUMP_POWER)
 	elseif state == "DoubleJump" then
-		Air.launch(c, Config.DOUBLE_JUMP_POWER)
+		c.isCharging = true
+		-- never slows a jump that's still rising faster
+		Air.launch(c, math.max(c.root.AssemblyLinearVelocity.Y, Config.DOUBLE_JUMP_HOP))
 	end
 end
 
@@ -107,6 +118,14 @@ function Air.update(c: Ctx, dt: number): Types.MoveState?
 	local leapTime = if c.animLength > 0 then c.animLength else Config.LEDGE_LEAP_TIME
 	if c.state == "LedgeLeap" and elapsed >= leapTime then
 		return "Fall"
+	end
+
+	-- the marker comes late or never while a dash animation is still playing out, so the charge has a time limit too
+	if c.isCharging and elapsed >= CHARGE_TIME then
+		Air.boost(c)
+	elseif c.isCharging then
+		local v = c.root.AssemblyLinearVelocity
+		c.root.AssemblyLinearVelocity = Vector3.new(v.X, math.max(v.Y, -Config.DOUBLE_JUMP_HANG), v.Z)
 	end
 
 	local launch = LAUNCHES[c.state]
@@ -153,6 +172,7 @@ end
 -- only the launches use the mover in the air, leaving cuts one short
 function Air.exit(c: Ctx)
 	c.lv.Enabled = false
+	c.isCharging = false
 end
 
 return Air

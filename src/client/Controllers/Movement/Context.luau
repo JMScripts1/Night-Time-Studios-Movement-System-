@@ -55,6 +55,8 @@ export type Ctx = {
 	momentum: number,
 	heading: Vector3,
 	airJumps: number,
+	-- a double jump between starting and its launch, see Air.boost
+	isCharging: boolean,
 	hasAirDashed: boolean,
 	landedAt: number,
 	takeoffY: number,
@@ -124,6 +126,7 @@ function Context.new(char: Model): Ctx
 		momentum = Config.WALK_SPEED,
 		heading = Vector3.zero,
 		airJumps = 0,
+		isCharging = false,
 		hasAirDashed = false,
 		landedAt = 0,
 		takeoffY = 0,

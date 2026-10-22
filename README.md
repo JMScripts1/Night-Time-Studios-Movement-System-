@@ -55,7 +55,7 @@ Fixed decisions the rest of the document builds on.
 | CrouchIdle | Grounded | CrouchWalk | no | |
 | CrouchWalk | Grounded | CrouchWalk | no | |
 | Jump | Airborne | Jump | no | |
-| DoubleJump | Airborne | DoubleJump | no | One air jump per airtime |
+| DoubleJump | Airborne | DoubleJump | no | One air jump per airtime. Charges, then launches at its animation's `Boost` marker (section 3) |
 | SlideJump | Airborne | SlideJump | no | Jump out of Slide. Keeps and adds momentum, then a short launch (section 4) |
 | LedgeLeap | Airborne | LedgeLeap | its animation's length, at most `LEDGE_LEAP_TIME` | A slide jump that clears a drop just after takeoff. A stronger launch that adds momentum |
 | Fall | Airborne | Fall | no | No key. Entered on walking off a ledge, or when a wall leap, ledge leap, boost or dash in the air ends |
@@ -101,6 +101,7 @@ Rules on top of the table:
 - **Wall states start in the air only.**
 - **No regrabbing the same wall.** After leaving a wall, `WALL_REGRAB` seconds must pass, and the server remembers `lastWallPart` and refuses that part until the player has landed. Chaining only works onto a different part. This is one check in `MovementService`, easy to change.
 - **Air jumps.** DoubleJump needs `airJumps < MAX_AIR_JUMPS`, and the counter only resets on landing. Wall states neither refund nor spend it, so an unused air jump is still there after a WallLeap or WallBoost ends in Fall.
+- **Double jump charges first.** The press gives a small hop (`DOUBLE_JUMP_HOP`, never slowing a jump that is still rising faster), then it hangs through a windup, falling no faster than `DOUBLE_JUMP_HANG`, and launches at `DOUBLE_JUMP_POWER` when the DoubleJump animation reaches its `Boost` marker. The windup plays `DOUBLE_JUMP_CHARGE_SPEED` times faster and the marker puts it back to normal speed. If the marker never fires it launches after `DOUBLE_JUMP_CHARGE_TIME`, sped up the same way. The camera pulls in by `DOUBLE_JUMP_FOV_PULL` through the windup and eases back out on the launch. Leaving the state during the windup (a dash, a wall, a ledge, a landing) drops the launch. The rest of the animation plays out over the fall.
 - **Mantle starts from the air states, WallCling and WallBoost**, and only when the ledge probe finds a ledge in reach.
 - **LedgeLeap starts from SlideJump only**, when the character will clear a drop of at least `LEDGE_LEAP_DROP` within `LEDGE_LEAP_WINDOW` of takeoff. The client looks ahead as far as the launch carries it in what is left of the window, so the leap starts at once and the SlideJump animation never shows. It ends when its animation does.
 - **Nothing starts during a dash.** It runs to its end first.
@@ -328,7 +329,7 @@ One entry point, `init.client.luau`, requires and starts the controllers.
 | `InputController` | The only module that reads input. Turns keys from `Config.KEYS` into named actions (`Sprint`, `Crouch`, `Jump`, `Dash`, `Mantle`) and hands them to the movement controller. Sprint is a double tap of W, held for as long as W stays down. W is read without being sunk so it still walks, and Shift is left free for shift lock. Crouch is a toggle, and jumping or starting a sprint turns it off. Movement direction comes from `Humanoid.MoveDirection` for now. If Server Authority is ever adopted, this is the module that moves to the Input Action System |
 | `MovementController` | The state machine, momentum and movers. One update per step (`RunService.PreSimulation`) and one `request(to)` function. `request` checks `MoveDefs[current].to[to]` and the local cooldown, switches at once, and sends `Move` when the wire state changed. On `MoveDeny` it snaps back, unless it has already left the denied state. It also starts the landing roll |
 | `AnimationController` | Loads every R6 track once per character through the `Animator` the server made (`WaitForChild("Animator")`) and keeps them. Plays by state. A running jump keeps the run animation going at `RUN_JUMP_ANIM_SPEED` instead of cutting to the jump. A dash animation takes over from the state animation and plays to its end. The jump, leap and boost one shots also play to their end when the state moves on to Fall, then hand over to the fall loop. The landing roll plays on top of the walk states. `play` returns the length of the animation it started, so LedgeLeap can last exactly as long as whichever of its animations plays, and those alternate |
-| `EffectController` | Camera FOV and sounds. FOV eases from `FOV_BASE` at walking speed to `FOV_MAX` at `MOMENTUM_MAX`, read from the local character's flat speed so dashes and launches widen it too. Sounds come from the slots in `Sounds.luau`: the local character plays them straight from the state machine, other characters from the `MoveState` attribute, as 3D sounds on their root. Dust and wall sparks are later |
+| `EffectController` | Camera FOV and sounds. FOV eases from `FOV_BASE` at walking speed to `FOV_MAX` at `MOMENTUM_MAX`, read from the local character's flat speed so dashes and launches widen it too, and pulled in through the double jump's windup. Sounds come from the slots in `Sounds.luau`: the local character plays them straight from the state machine, other characters from the `MoveState` attribute, as 3D sounds on their root. Dust and wall sparks are later |
 
 ### State modules
 
@@ -370,7 +371,7 @@ All tracks are R6 animations, with their asset ids in `Anims.luau`, which assert
 | Movement | Walk, Run |
 | Action | Slide, Mantle, the dashes, Roll, LedgeLeap, wall states, jumps |
 
-R6 animations cannot be mirrored at runtime, so WallRun and WallLeap need a Left and a Right animation and Dash needs four (F, B, L, R). The air dash plays its own `AirDash` animation in place of DashF. The DashB animation needs a keyframe marker named `Boost` where the burst starts. LedgeLeap has two animations, `LedgeLeap` and `LedgeLeap2`, listed in `LEAPS` in `AnimationController`, and `LEDGE_LEAP_TIME` must be at least as long as the longest. An empty `Animate` LocalScript in `StarterCharacterScripts` replaces the default one so it does not fight these tracks.
+R6 animations cannot be mirrored at runtime, so WallRun and WallLeap need a Left and a Right animation and Dash needs four (F, B, L, R). The air dash plays its own `AirDash` animation in place of DashF. The DashB animation needs a keyframe marker named `Boost` where the burst starts, and the DoubleJump animation one where the launch happens. LedgeLeap has two animations, `LedgeLeap` and `LedgeLeap2`, listed in `LEAPS` in `AnimationController`, and `LEDGE_LEAP_TIME` must be at least as long as the longest. An empty `Animate` LocalScript in `StarterCharacterScripts` replaces the default one so it does not fight these tracks.
 
 ### Sounds
 
@@ -464,7 +465,7 @@ Every tunable lives in `src/shared/Config.luau`, which is the source of truth. T
 | Group | Covers |
 |---|---|
 | Ground and momentum | Walk, crouch and run speeds, `RUN_BUILD`, `MOMENTUM_MAX`, decay rates, `LAND_GRACE`, `AIR_TURN_RATE` |
-| Jumps and landing | Jump and double jump power, `COYOTE`, and the landing roll (`ROLL_HEIGHT`, `ROLL_SPEED`, `ROLL_TIME`) |
+| Jumps and landing | Jump and double jump power, the double jump windup (`DOUBLE_JUMP_CHARGE_TIME`, `DOUBLE_JUMP_CHARGE_SPEED`, `DOUBLE_JUMP_HOP`, `DOUBLE_JUMP_HANG`, `DOUBLE_JUMP_FOV_PULL`), `COYOTE`, and the landing roll (`ROLL_HEIGHT`, `ROLL_SPEED`, `ROLL_TIME`) |
 | Slide | Entry speed, boost, decay, end speed, cooldown, jump gain, turn rate, the slide jump launch (`SLIDE_JUMP_*`) and the ledge leap (`LEDGE_LEAP_*`) |
 | Wall states | Wall probe reach and spans, `FACING_SPLIT`, regrab time, wall run, cling, leap and boost numbers |
 | Mantle | Lip window (`LEDGE_LOW`, `LEDGE_HIGH`, `LEDGE_DEPTH`), the path keyed to its animation, `LEDGE_GRACE`, `MANTLE_TIME`, `MANTLE_COOLDOWN` |
@@ -517,6 +518,7 @@ Whether to build on Server Authority now that Roblox calls it released is a deci
 
 - Wall activation and boost
 - No double jump refund
+- The double jump charges and launches at its animation's `Boost` marker, like the back dash
 - Slide trigger
 - Dash as the dodge, with iframes
 - Dash Back with no key held, usable in the air
