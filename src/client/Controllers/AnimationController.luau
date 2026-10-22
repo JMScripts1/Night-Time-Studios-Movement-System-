@@ -16,6 +16,7 @@ type Ctx = Context.Ctx
 local BOOST_MARKER = "Boost"
 local BACK_DASH: Types.AnimName = "DashB"
 local DOUBLE_JUMP: Types.AnimName = "DoubleJump"
+local WALL_GRAB: Types.AnimName = "WallGrab"
 local RUN: Types.AnimName = "Run"
 local ROLL: Types.AnimName = "Roll"
 -- the leap alternates between these, and lasts as long as whichever one plays
@@ -42,13 +43,16 @@ local rolling: AnimationTrack? = nil
 local leaps = 0
 
 for name: Types.AnimName, id in Anims do
+	if id == "" then
+		continue
+	end
 	local anim = Instance.new("Animation")
 	anim.AnimationId = id
 	animations[name] = anim
 end
 
--- the air dash is DashF in the air with its own animation
-local DASH_ANIMS: { Types.AnimName } = { "AirDash" }
+-- the air dash is DashF in the air with its own animation, the wall grab takes over the same way a dash does
+local DASH_ANIMS: { Types.AnimName } = { "AirDash", WALL_GRAB }
 for state: Types.MoveState, def in MoveDefs do
 	if def.isDash then
 		table.insert(DASH_ANIMS, state)
@@ -116,6 +120,9 @@ function AnimationController.load(c: Ctx)
 
 	for _, name: Types.AnimName in DASH_ANIMS do
 		local track = tracks[name]
+		if not track then
+			continue
+		end
 		c.trove:Connect(track.Stopped, function()
 			if dashing ~= track then
 				return
@@ -164,6 +171,13 @@ end
 
 -- returns the length of the animation the state plays, 0 until it has loaded
 function AnimationController.play(c: Ctx): number
+	-- the grab only covers the start of a cling, letting go or boosting cuts it short
+	local grab = tracks[WALL_GRAB]
+	if grab and dashing == grab and c.state ~= "WallCling" then
+		dashing = nil
+		grab:Stop(Config.ANIM_FADE)
+	end
+
 	-- a leap keeps the wall it left, so its side is the run's side
 	local isLeft = c.wall ~= nil and c.wall.side == "Left"
 	if MoveDefs[c.state].isDash then
@@ -175,6 +189,11 @@ function AnimationController.play(c: Ctx): number
 	elseif c.state == "LedgeLeap" then
 		leaps = leaps % #LEAPS + 1
 		start(LEAPS[leaps])
+	elseif c.state == "WallCling" and grab then
+		-- the grab plays once on the way in, sped up, then hands over to the cling's own loop
+		dash(WALL_GRAB)
+		grab:AdjustSpeed(Config.WALL_GRAB_SPEED)
+		start("WallCling")
 	else
 		start(c.state)
 	end

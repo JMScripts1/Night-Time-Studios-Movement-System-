@@ -16,6 +16,7 @@ type Ctx = Context.Ctx
 local SLIDE_DOWN = Vector3.new(0, -Config.CLING_SLIDE_SPEED, 0)
 -- staying on the wall only needs the wall, a cling has no speed condition anyway
 local ANY_SPEED = math.huge
+local GRAB_TIME = Config.WALL_GRAB_TIME / Config.WALL_GRAB_SPEED
 
 local WallCling = {}
 
@@ -25,7 +26,7 @@ function WallCling.enter(c: Ctx)
 
 	if c.state == "WallCling" then
 		c.heading = Vector3.zero
-		Context.drive(c, SLIDE_DOWN)
+		Context.drive(c, Vector3.zero)
 		return
 	end
 
@@ -46,10 +47,14 @@ function WallCling.update(c: Ctx): Types.MoveState?
 	local elapsed = os.clock() - c.since
 
 	if c.state == "WallCling" then
-		if isJump then
+		-- the grab plays out before the cling can boost or starts sliding down
+		local isGrabbed = elapsed >= GRAB_TIME
+		if isJump and isGrabbed then
 			return "WallBoost"
 		elseif elapsed >= Config.CLING_MAX_TIME or not Probes.wall(c.root, ANY_SPEED) then
 			return "Fall"
+		elseif isGrabbed then
+			Context.drive(c, SLIDE_DOWN)
 		end
 		return nil
 	end

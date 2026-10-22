@@ -36,6 +36,7 @@ export type AnimName =
 	| "Roll"
 	| "LedgeLeap2"
 	| "AirDash"
+	| "WallGrab"
 
 -- states play the slot named after them, the four dashes share Dash and any landing plays Land
 export type SoundName = MoveState | "Dash" | "Land"

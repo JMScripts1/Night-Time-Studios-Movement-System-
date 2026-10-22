@@ -73,6 +73,10 @@ return table.freeze({
 	WALLRUN_FALL_SPEED = 3,
 	WALLRUN_DECAY = 0,
 	CLING_MAX_TIME = 3,
+	-- the WallGrab animation's length, 40 frames at 60 fps. the cling holds still through it, then slides down
+	WALL_GRAB_TIME = 40 / 60,
+	-- the grab plays this many times faster, and the cling can't boost until it's over
+	WALL_GRAB_SPEED = 1.5,
 	CLING_SLIDE_SPEED = 2,
 	LEAP_OUT = 60,
 	LEAP_UP = 80,

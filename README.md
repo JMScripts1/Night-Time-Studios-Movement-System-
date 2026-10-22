@@ -96,7 +96,7 @@ Dash        -> Walk, Run, CrouchWalk, Fall
 
 Rules on top of the table:
 
-- **Jump in the air** checks for a ledge first (Mantle, section 6), then a wall, then the air jump. A wall probe hit starts WallRun or WallCling, whichever the facing says (section 5.1). Jump in a WallRun is WallLeap, Jump in a WallCling is WallBoost, unless a ledge is in reach.
+- **Jump in the air** checks for a ledge first (Mantle, section 6), then a wall, then the air jump. A wall probe hit starts WallRun or WallCling, whichever the facing says (section 5.1). Jump in a WallRun is WallLeap, Jump in a WallCling is WallBoost once the WallGrab animation has played out (a press before that is dropped), unless a ledge is in reach.
 - **Jump while crouched stands up** (Idle, or Walk if moving) instead of jumping, unless there is no headroom to stand.
 - **Wall states start in the air only.**
 - **No regrabbing the same wall.** After leaving a wall, `WALL_REGRAB` seconds must pass, and the server remembers `lastWallPart` and refuses that part until the player has landed. Chaining only works onto a different part. This is one check in `MovementService`, easy to change.
@@ -139,7 +139,7 @@ Only running builds it, and only walking, crouching or standing still drops it. 
 | Air | Holds momentum (`MOMENTUM_AIR_DECAY` is off). Steering turns the velocity direction (`AIR_TURN_RATE`), it does not add speed |
 | WallRun | Holds momentum (`WALLRUN_DECAY` is off), falls at `WALLRUN_FALL_SPEED` |
 | WallLeap | Pushes at momentum plus `LEAP_GAIN` along the wall, plus `LEAP_OUT` away from it and `LEAP_UP`. None of the push is carried, momentum is unchanged |
-| WallCling | Momentum is kept. Slides down the wall at `CLING_SLIDE_SPEED` |
+| WallCling | Momentum is kept. Holds still through the WallGrab animation (`WALL_GRAB_TIME`, played `WALL_GRAB_SPEED` times faster), then slides down the wall at `CLING_SLIDE_SPEED` |
 | WallBoost | Vertical launch up the wall (`BOOST_UP`), no push away from it |
 | Mantle | Momentum unchanged |
 | Dash | No change, speed returns to what it was before the dash |
@@ -371,9 +371,9 @@ All tracks are R6 animations, with their asset ids in `Anims.luau`, which assert
 |---|---|
 | Idle | Idle, Fall |
 | Movement | Walk, Run |
-| Action | Slide, Mantle, the dashes, Roll, LedgeLeap, wall states, jumps |
+| Action | Slide, Mantle, the dashes, Roll, LedgeLeap, WallGrab, wall states, jumps |
 
-R6 animations cannot be mirrored at runtime, so WallRun and WallLeap need a Left and a Right animation and Dash needs four (F, B, L, R). The air dash plays its own `AirDash` animation in place of DashF. The DashB animation needs a keyframe marker named `Boost` where the burst starts, and the DoubleJump animation one where the launch happens. LedgeLeap has two animations, `LedgeLeap` and `LedgeLeap2`, listed in `LEAPS` in `AnimationController`, and `LEDGE_LEAP_TIME` must be at least as long as the longest. An empty `Animate` LocalScript in `StarterCharacterScripts` replaces the default one so it does not fight these tracks.
+R6 animations cannot be mirrored at runtime, so WallRun and WallLeap need a Left and a Right animation and Dash needs four (F, B, L, R). The air dash plays its own `AirDash` animation in place of DashF. The DashB animation needs a keyframe marker named `Boost` where the burst starts, and the DoubleJump animation one where the launch happens. LedgeLeap has two animations, `LedgeLeap` and `LedgeLeap2`, listed in `LEAPS` in `AnimationController`, and `LEDGE_LEAP_TIME` must be at least as long as the longest. `WallGrab` is visual only, not a state: it plays once as a WallCling grabs the wall, `WALL_GRAB_SPEED` times faster, taking over like a dash animation, then hands over to the WallCling loop. The cling can't boost until it's over. Letting go or boosting before it ends cuts it short. An empty id in `Anims.luau` is a slot with no animation yet and plays nothing. An empty `Animate` LocalScript in `StarterCharacterScripts` replaces the default one so it does not fight these tracks.
 
 ### Sounds
 

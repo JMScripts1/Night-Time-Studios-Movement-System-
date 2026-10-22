@@ -12,11 +12,13 @@ local SLOTS: { [string]: true } = {
 	Roll = true,
 	LedgeLeap2 = true,
 	AirDash = true,
+	WallGrab = true,
 }
 for state in MoveDefs do
 	SLOTS[state] = true
 end
 
+-- an empty id is a slot with no animation yet, it plays nothing
 local Anims: { [Types.AnimName]: string } = {
 	Idle = "rbxassetid://111253788104830",
 	Walk = "rbxassetid://134520063601014",
@@ -43,6 +45,7 @@ local Anims: { [Types.AnimName]: string } = {
 	Roll = "rbxassetid://120431676333500",
 	LedgeLeap = "rbxassetid://90219606237010",
 	LedgeLeap2 = "rbxassetid://120588070311007",
+	WallGrab = "rbxassetid://117778559144458",
 }
 
 -- the old solver doesn't check keys in the table above, so a typo would just never play
