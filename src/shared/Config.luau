@@ -79,7 +79,8 @@ return table.freeze({
 	LEAP_TIME = 0.35,
 	LEAP_GAIN = 6,
 	BOOST_UP = 100,
-	BOOST_TIME = 0.6,
+	-- the WallBoost animation's length, 25 frames at 60 fps
+	BOOST_TIME = 25 / 60,
 	BOOST_IN = 10,
 
 	MANTLE_COOLDOWN = 0.4,
