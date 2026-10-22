@@ -18,9 +18,9 @@ for state in MoveDefs do
 end
 
 local Anims: { [Types.AnimName]: string } = {
-	Idle = "rbxassetid://135449190200569",
-	Walk = "rbxassetid://92621759199829",
-	Run = "rbxassetid://97365671049008",
+	Idle = "rbxassetid://111253788104830",
+	Walk = "rbxassetid://134520063601014",
+	Run = "rbxassetid://84237278404758",
 	Jump = "rbxassetid://91804113405885",
 	Slide = "rbxassetid://131338188389559",
 	SlideJump = "rbxassetid://87854361282454",
@@ -30,7 +30,7 @@ local Anims: { [Types.AnimName]: string } = {
 	WallRunRight = "rbxassetid://94263927972902",
 	Fall = "rbxassetid://127049077162885",
 	DoubleJump = "rbxassetid://84083501909606",
-	WallCling = "rbxassetid://130191404882056",
+	WallCling = "rbxassetid://122183968429231",
 	WallBoost = "rbxassetid://113668530383382",
 	WallLeapLeft = "rbxassetid://133207858909587",
 	WallLeapRight = "rbxassetid://71164723335647",
