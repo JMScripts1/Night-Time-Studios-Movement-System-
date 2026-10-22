@@ -30,8 +30,9 @@ function Slide.update(c: Ctx, dt: number): Types.MoveState?
 		return "Fall"
 	end
 
-	c.momentum -= Config.SLIDE_DECAY * dt
-	if c.momentum < Config.SLIDE_END_SPEED then
+	-- the slide slows down on its own speed, momentum comes out of it untouched
+	local speed = c.momentum - Config.SLIDE_DECAY * (os.clock() - c.since)
+	if speed < Config.SLIDE_END_SPEED then
 		return Ground.pick(c)
 	end
 
@@ -39,7 +40,7 @@ function Slide.update(c: Ctx, dt: number): Types.MoveState?
 	local look = workspace.CurrentCamera.CFrame.LookVector
 	c.heading = Context.turn(c.heading, Vector3.new(look.X, 0, look.Z).Unit, TURN_RATE * dt)
 	Context.face(c, c.heading)
-	Context.glide(c, c.heading * c.momentum)
+	Context.glide(c, c.heading * speed)
 	return nil
 end
 

@@ -53,6 +53,8 @@ export type Ctx = {
 	-- the length of the animation the state started with, for a state that lasts exactly as long
 	animLength: number,
 	momentum: number,
+	-- seconds spent running since momentum was last dropped, the build waits on it
+	runTime: number,
 	heading: Vector3,
 	airJumps: number,
 	-- a double jump between starting and its launch, see Air.boost
@@ -124,6 +126,7 @@ function Context.new(char: Model): Ctx
 		since = os.clock(),
 		animLength = 0,
 		momentum = Config.WALK_SPEED,
+		runTime = 0,
 		heading = Vector3.zero,
 		airJumps = 0,
 		isCharging = false,

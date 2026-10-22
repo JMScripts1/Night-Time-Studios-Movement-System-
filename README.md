@@ -50,14 +50,14 @@ Fixed decisions the rest of the document builds on.
 |---|---|---|---|---|
 | Idle | Grounded | Walk | no | |
 | Walk | Grounded | Walk | no | |
-| Run | Grounded | Run | no | Sprint, builds momentum |
+| Run | Grounded | Run | no | Sprint, the only thing that builds momentum |
 | Slide | Grounded | Slide | until speed drops | Run plus crouch key only. Ends in CrouchWalk if there is no headroom to stand |
 | CrouchIdle | Grounded | CrouchWalk | no | |
 | CrouchWalk | Grounded | CrouchWalk | no | |
 | Jump | Airborne | Jump | no | |
 | DoubleJump | Airborne | DoubleJump | no | One air jump per airtime. Charges, then launches at its animation's `Boost` marker (section 3) |
-| SlideJump | Airborne | SlideJump | no | Jump out of Slide. Keeps and adds momentum, then a short launch (section 4) |
-| LedgeLeap | Airborne | LedgeLeap | its animation's length, at most `LEDGE_LEAP_TIME` | A slide jump that clears a drop just after takeoff. A stronger launch that adds momentum |
+| SlideJump | Airborne | SlideJump | no | Jump out of Slide. Keeps momentum, then a short launch (section 4) |
+| LedgeLeap | Airborne | LedgeLeap | its animation's length, at most `LEDGE_LEAP_TIME` | A slide jump that clears a drop just after takeoff. A stronger launch |
 | Fall | Airborne | Fall | no | No key. Entered on walking off a ledge, or when a wall leap, ledge leap, boost or dash in the air ends |
 | DashF, DashB, DashL, DashR | Airborne | same | `DASH_TIME`, back dash up to `BACK_DASH_TIME + BACK_DASH_BOOST_TIME` | Q, one state per direction (section 3.1) |
 | WallRun | Wall | WallRun | `WALLRUN_MAX_TIME` | Jump pressed in the air at a wall, side on to it |
@@ -117,7 +117,7 @@ Dash is four states, DashF, DashB, DashL and DashR, one per direction relative t
 - **Cooldowns:** front and back share one `DASH_COOLDOWN`, left and right share another (the `shares` field in `MoveDefs`). A side dash can follow a front dash, two of the same kind can't. In the air there is one dash until landing, so the chain only works on the ground (`hasAirDashed`, reset on landing like the air jump). A WallRun or WallBoost gives it back, a cling on its own doesn't, and a dash started on the ground doesn't count. No charges and no stamina cost.
 - **Front and side dashes:** a `LinearVelocity` burst on `HumanoidRootPart` for `DASH_TIME` at `max(DASH_SPEED, momentum)`, fading back to momentum over the last `DASH_TAIL` of it. The direction is re-read against the character's facing every step, so turning bends the path. In the air the vertical speed is held at zero for `DASH_AIR_HOLD`, then gravity takes over.
 - **Back dash:** a slow backstep at `BACK_DASH_SPEED * BACK_DASH_DRIFT` until the DashB animation reaches its `Boost` marker, then a burst at `BACK_DASH_SPEED * BACK_DASH_BOOST` for `BACK_DASH_BOOST_TIME`. Its direction is fixed when it starts. In the air it has no height hold, gravity keeps working, so the longer windup doesn't stall the character mid air. If the marker never fires it ends after `BACK_DASH_TIME`.
-- **Air dash:** a front dash started from an airborne state. It bursts like any front dash but at `AIR_DASH_SPEED` and with no `DASH_TAIL`: it lets go at full speed, like the slide jump and ledge leap launches, and the Humanoid's air control bleeds it down onto momentum plus `AIR_DASH_GAIN`, never less than `AIR_DASH_EXIT` (capped at `MOMENTUM_MAX`). So it carries the character from a standstill jump and still adds speed when already fast. Instead of holding its height it rises at `AIR_DASH_LIFT` for `DASH_AIR_HOLD`, enough to reach a platform a little above. When it ends the character keeps going the way it dashed. It is still DashF on the wire, so it shares the front and back cooldown and gives the same iframes. Back and side dashes in the air are plain dashes.
+- **Air dash:** a front dash started from an airborne state. It bursts like any front dash but at `AIR_DASH_SPEED` and with no `DASH_TAIL`: it lets go at full speed, like the slide jump and ledge leap launches, and the Humanoid's air control bleeds it down onto momentum plus `AIR_DASH_GAIN`, never less than `AIR_DASH_EXIT` (capped at `MOMENTUM_MAX`). Both are off for now (section 4), so it bleeds back down to the momentum it started with. Instead of holding its height it rises at `AIR_DASH_LIFT` for `DASH_AIR_HOLD`, enough to reach a platform a little above. When it ends the character keeps going the way it dashed. It is still DashF on the wire, so it shares the front and back cooldown and gives the same iframes. Back and side dashes in the air are plain dashes.
 - **Momentum** is unchanged by every other dash, and back and side dashes in the air keep the heading the jump had.
 - **Airborne group,** so a dash off the ground is a takeoff and its end is a landing, both checked like any other.
 
@@ -127,22 +127,24 @@ Dash is four states, DashF, DashB, DashL and DashR, one per direction relative t
 
 Momentum is one number: carried horizontal speed in studs per second. It lives on the client, in the movement controller. The server never trusts it, it only bounds it (section 7.4).
 
+Only running builds it, and only walking, crouching or standing still drops it. The parkour moves carry it without adding or bleeding any: their gains (`SLIDE_BOOST`, `SLIDE_JUMP_GAIN`, `LEDGE_LEAP_GAIN`, `AIR_DASH_GAIN`, `AIR_DASH_EXIT`) and bleeds (`MOMENTUM_AIR_DECAY`, `WALLRUN_DECAY`) are off for now, 0 or 1 for `SLIDE_BOOST`, and stay in `Config` in case they come back.
+
 | Event | Effect |
 |---|---|
-| Run | Holds momentum at `RUN_SPEED` or above, builds slowly while running straight |
-| Walk, Crouch | Momentum drops to the state's speed at once. After a landing it holds for `LAND_GRACE` first, so the landing can still go into a run or slide |
-| Slide start | Momentum x `SLIDE_BOOST`, then decays at `SLIDE_DECAY`. Ends under `SLIDE_END_SPEED` |
+| Run | Holds momentum at `RUN_SPEED` or above. After `RUN_BUILD_DELAY` seconds of running it starts building while running straight, the rate easing up to `RUN_BUILD` over `RUN_BUILD_EASE`, until `MOMENTUM_MAX`. The count only starts over when momentum is dropped, so jumps, slides and dashes in a run don't reset it |
+| Walk, Crouch | Momentum drops to the state's speed at once and the run count starts over. After a landing it holds for `LAND_GRACE` first, so the landing can still go into a run or slide |
+| Slide start | Starts at momentum x `SLIDE_BOOST` and slows at `SLIDE_DECAY`, ending under `SLIDE_END_SPEED`. The slowing is the slide's own speed, momentum comes out of it untouched |
 | SlideJump | Keeps momentum, adds `SLIDE_JUMP_GAIN`. Launches along the heading at momentum x `SLIDE_JUMP_LAUNCH` plus `SLIDE_JUMP_LIFT` up, held for `SLIDE_JUMP_LAUNCH_TIME`, then the air takes over |
 | LedgeLeap | Adds `LEDGE_LEAP_GAIN`, capped at `MOMENTUM_MAX`. The same kind of launch with `LEDGE_LEAP_LAUNCH`, `LEDGE_LEAP_LIFT` and `LEDGE_LEAP_LAUNCH_TIME` |
-| Air | Decays slowly at `MOMENTUM_AIR_DECAY`. Steering turns the velocity direction (`AIR_TURN_RATE`), it does not add speed |
-| WallRun | Holds momentum, decays at `WALLRUN_DECAY`, falls at `WALLRUN_FALL_SPEED` |
-| WallLeap | Momentum becomes velocity along the wall plus `LEAP_OUT` away from the wall plus `LEAP_UP`, adds `LEAP_GAIN` |
-| WallCling | Horizontal momentum is dropped, slides down the wall at `CLING_SLIDE_SPEED` |
+| Air | Holds momentum (`MOMENTUM_AIR_DECAY` is off). Steering turns the velocity direction (`AIR_TURN_RATE`), it does not add speed |
+| WallRun | Holds momentum (`WALLRUN_DECAY` is off), falls at `WALLRUN_FALL_SPEED` |
+| WallLeap | Pushes at momentum plus `LEAP_GAIN` along the wall, plus `LEAP_OUT` away from it and `LEAP_UP`. None of the push is carried, momentum is unchanged |
+| WallCling | Momentum is kept. Slides down the wall at `CLING_SLIDE_SPEED` |
 | WallBoost | Vertical launch up the wall (`BOOST_UP`), no push away from it |
 | Mantle | Momentum unchanged |
 | Dash | No change, speed returns to what it was before the dash |
 | Air dash | Adds `AIR_DASH_GAIN`, at least `AIR_DASH_EXIT`, capped at `MOMENTUM_MAX`. The burst lets go at full speed and the air bleeds it onto the new momentum, along the dash |
-| Landing | Momentum is kept if a state that carries it (Run, Slide) is entered within `LAND_GRACE`, otherwise it decays as normal |
+| Landing | Momentum is kept if a state that carries it (Run, Slide) is entered within `LAND_GRACE`, otherwise walking or standing drops it as normal |
 | Landing roll | A landing at least `ROLL_HEIGHT` below where the ground was left plays the Roll animation and carries the character forward at `max(ROLL_SPEED, momentum)` for `ROLL_TIME`, even with no keys held. Not a state. Jumping, sliding or dashing cuts it short |
 | Hard cap | `MOMENTUM_MAX`, nothing exceeds it |
 
@@ -464,7 +466,7 @@ Every tunable lives in `src/shared/Config.luau`, which is the source of truth. T
 
 | Group | Covers |
 |---|---|
-| Ground and momentum | Walk, crouch and run speeds, `RUN_BUILD`, `MOMENTUM_MAX`, decay rates, `LAND_GRACE`, `AIR_TURN_RATE` |
+| Ground and momentum | Walk, crouch and run speeds, the run build (`RUN_BUILD_DELAY`, `RUN_BUILD_EASE`, `RUN_BUILD`), `MOMENTUM_MAX`, decay rates, `LAND_GRACE`, `AIR_TURN_RATE` |
 | Jumps and landing | Jump and double jump power, the double jump windup (`DOUBLE_JUMP_CHARGE_TIME`, `DOUBLE_JUMP_CHARGE_SPEED`, `DOUBLE_JUMP_HOP`, `DOUBLE_JUMP_HANG`, `DOUBLE_JUMP_FOV_PULL`), `COYOTE`, and the landing roll (`ROLL_HEIGHT`, `ROLL_SPEED`, `ROLL_TIME`) |
 | Slide | Entry speed, boost, decay, end speed, cooldown, jump gain, turn rate, the slide jump launch (`SLIDE_JUMP_*`) and the ledge leap (`LEDGE_LEAP_*`) |
 | Wall states | Wall probe reach and spans, `FACING_SPLIT`, regrab time, wall run, cling, leap and boost numbers |
@@ -525,7 +527,7 @@ Whether to build on Server Authority now that Roblox calls it released is a deci
 - Dash is a state, so nothing stacks on it. Refused from crouching, Slide, Mantle and the wall states
 - Front and back dashes share a cooldown, side dashes share another, so the two kinds chain
 - The back dash is a backstep and a burst keyed to its animation's `Boost` marker
-- A front dash in the air is the air dash: a full dash burst that hands a carry speed to momentum and keeps going where it went. It is not a separate state or key
+- A front dash in the air is the air dash: a full dash burst that keeps going where it went. It is not a separate state or key
 - No stamina costs
 - Loose speed caps
 - Double tap W to sprint (Shift stays shift lock), Control to toggle crouch, Q to dash
@@ -533,7 +535,8 @@ Whether to build on Server Authority now that Roblox calls it released is a deci
 - No low vault. It only added a speed boost the other moves already give
 - A landing roll after a drop of `ROLL_HEIGHT` or more, visual plus a short forward push, not a state
 - A running jump keeps the run animation, slowed, instead of the jump animation
-- A slide jump launches, and one that clears a drop just after takeoff becomes a ledge leap, a stronger launch that adds momentum and lasts as long as its animation
+- A slide jump launches, and one that clears a drop just after takeoff becomes a ledge leap, a stronger launch that lasts as long as its animation
+- Only running builds momentum. It starts a few seconds into a run and eases up to the top. Only walking, crouching or standing still drops it, parkour moves neither add nor bleed any
 - Whether Slide can pass under low gaps is tested first, and a smaller collision hull is only added if needed (section 15)
 
 ### Open

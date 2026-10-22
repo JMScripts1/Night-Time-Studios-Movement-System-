@@ -24,7 +24,6 @@ function WallCling.enter(c: Ctx)
 	Context.face(c, -wall.normal)
 
 	if c.state == "WallCling" then
-		c.momentum = 0
 		c.heading = Vector3.zero
 		Context.drive(c, SLIDE_DOWN)
 		return

@@ -8,12 +8,16 @@ return table.freeze({
 	WALK_SPEED = 14,
 	CROUCH_SPEED = 7,
 	RUN_SPEED = 22,
+	-- only running builds momentum: nothing for RUN_BUILD_DELAY seconds, then the rate eases up to RUN_BUILD over RUN_BUILD_EASE
+	-- and only walking, crouching or standing still drops it. the parkour gains and bleeds are off (0, or 1 for SLIDE_BOOST)
+	RUN_BUILD_DELAY = 5,
+	RUN_BUILD_EASE = 2,
 	RUN_BUILD = 2,
 	-- MoveDirection against the look vector, above this counts as running straight
 	RUN_STRAIGHT = 0.95,
 	MOMENTUM_MAX = 40,
 	MOMENTUM_GROUND_DECAY = 30,
-	MOMENTUM_AIR_DECAY = 1.5,
+	MOMENTUM_AIR_DECAY = 0,
 	LAND_GRACE = 0.15,
 	AIR_TURN_RATE = 120,
 
@@ -38,11 +42,11 @@ return table.freeze({
 	ROLL_TIME = 26 / 60,
 
 	SLIDE_MIN_SPEED = 18,
-	SLIDE_BOOST = 1.1,
+	SLIDE_BOOST = 1,
 	SLIDE_DECAY = 12,
 	SLIDE_END_SPEED = 10,
 	SLIDE_COOLDOWN = 1.2,
-	SLIDE_JUMP_GAIN = 4,
+	SLIDE_JUMP_GAIN = 0,
 	-- the slide jump launches at momentum times this plus SLIDE_JUMP_LIFT up, held for SLIDE_JUMP_LAUNCH_TIME
 	SLIDE_JUMP_LAUNCH = 1.5,
 	SLIDE_JUMP_LIFT = 18,
@@ -50,7 +54,7 @@ return table.freeze({
 	-- a slide jump that clears a drop of LEDGE_LEAP_DROP within LEDGE_LEAP_WINDOW of takeoff turns into a ledge leap
 	LEDGE_LEAP_WINDOW = 0.2,
 	LEDGE_LEAP_DROP = 8,
-	LEDGE_LEAP_GAIN = 8,
+	LEDGE_LEAP_GAIN = 0,
 	LEDGE_LEAP_LAUNCH = 2,
 	LEDGE_LEAP_LIFT = 30,
 	LEDGE_LEAP_LAUNCH_TIME = 0.25,
@@ -67,7 +71,7 @@ return table.freeze({
 	WALLRUN_MIN_SPEED = 16,
 	WALLRUN_MAX_TIME = 2.5,
 	WALLRUN_FALL_SPEED = 3,
-	WALLRUN_DECAY = 2,
+	WALLRUN_DECAY = 0,
 	CLING_MAX_TIME = 3,
 	CLING_SLIDE_SPEED = 2,
 	LEAP_OUT = 60,
@@ -107,8 +111,8 @@ return table.freeze({
 	BACK_DASH_ANIM_TIME = 1,
 	-- a forward dash in the air bursts at AIR_DASH_SPEED, then carries momentum plus AIR_DASH_GAIN, at least AIR_DASH_EXIT
 	AIR_DASH_SPEED = 70,
-	AIR_DASH_GAIN = 4,
-	AIR_DASH_EXIT = 28,
+	AIR_DASH_GAIN = 0,
+	AIR_DASH_EXIT = 0,
 	-- upward speed held through DASH_AIR_HOLD instead of zero, so the air dash rises a little
 	AIR_DASH_LIFT = 30,
 	LEAN_WALK = 9,

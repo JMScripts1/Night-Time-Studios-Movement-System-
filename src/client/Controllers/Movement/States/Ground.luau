@@ -48,14 +48,17 @@ function Ground.update(c: Ctx, dt: number): Types.MoveState?
 
 	if state == "Run" then
 		c.momentum = math.max(c.momentum, Config.RUN_SPEED)
+		c.runTime += dt
 		if hum.MoveDirection:Dot(c.root.CFrame.LookVector) >= Config.RUN_STRAIGHT then
-			c.momentum = math.min(Config.MOMENTUM_MAX, c.momentum + Config.RUN_BUILD * dt)
+			local ease = math.clamp((c.runTime - Config.RUN_BUILD_DELAY) / Config.RUN_BUILD_EASE, 0, 1)
+			c.momentum = math.min(Config.MOMENTUM_MAX, c.momentum + Config.RUN_BUILD * ease * dt)
 		end
 	else
 		-- walking and crouching drop to their own speed at once, a landing holds on so it can still go into a run or slide
 		local target = SPEEDS[state]
 		if c.momentum < target or os.clock() - c.landedAt > Config.LAND_GRACE then
 			c.momentum = target
+			c.runTime = 0
 		end
 	end
 

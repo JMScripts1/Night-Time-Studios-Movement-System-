@@ -31,9 +31,8 @@ function WallRun.enter(c: Ctx)
 		return
 	end
 
-	-- heading is still the run direction along the wall. the push isn't capped, only what's carried out of it
+	-- heading is still the run direction along the wall. only running builds momentum, so none of the push is carried out
 	local out = c.heading * (c.momentum + Config.LEAP_GAIN) + wall.normal * Config.LEAP_OUT
-	c.momentum = math.min(Config.MOMENTUM_MAX, out.Magnitude)
 	c.heading = out.Unit
 	Context.glide(c, out)
 	Air.launch(c, Config.LEAP_UP)
